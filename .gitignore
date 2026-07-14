@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Local Environment and Secrets
+.env
+.env.local
+.env.*.local
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# OS System Files
+.DS_Store
+Thumbs.db
+
+# Build and Temp Directories
+dist/
+build/
+.next/
+out/
+.docusaurus/
+.turbo/
