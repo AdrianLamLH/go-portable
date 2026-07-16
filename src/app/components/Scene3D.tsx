@@ -6,26 +6,25 @@ import * as THREE from "three";
 // The agent-sphere POC renders into a texture mapped onto the monitor's
 // screen face; tabs + cursor + scanlines composite on a HUD canvas texture.
 
-type SphereMode = "lattice" | "about" | "work" | "projects" | "terminal";
-type NavId = "about" | "work" | "projects" | "terminal";
-type WordMode = "about" | "work" | "projects";
+type SphereMode = "lattice" | "terminal";
+type PageId = "about" | "work" | "projects" | "extras" | "chat";
 
-const WORD_TEXT: Record<WordMode, string> = {
-  work: "WORK",
-  projects: "PROJECTS",
-  about: "ABOUT ME",
-};
-
-function isWordMode(m: SphereMode): m is WordMode {
-  return m === "about" || m === "work" || m === "projects";
-}
-
-const NAV_TABS: { id: NavId; label: string }[] = [
-  { id: "about", label: "About me" },
-  { id: "work", label: "Work Experiences" },
-  { id: "projects", label: "Personal Projects" },
-  { id: "terminal", label: "Terminal" },
+// LamOS desktop — icons boot in after the splash screen
+const DESKTOP_ICONS: { id: PageId; label: string; kind: "folder" | "exe" }[] = [
+  { id: "about", label: "about me", kind: "folder" },
+  { id: "work", label: "work experience", kind: "folder" },
+  { id: "projects", label: "personal projects", kind: "folder" },
+  { id: "extras", label: "extras", kind: "folder" },
+  { id: "chat", label: "let's chat.exe", kind: "exe" },
 ];
+
+const WINDOW_TITLES: Record<PageId, string> = {
+  about: "about_me",
+  work: "work_experience.doc",
+  projects: "personal_projects",
+  extras: "extras",
+  chat: "lets_chat.exe",
+};
 
 // Screen palette — the POC's locked tokens
 const S_INK = "#ede4d3";
@@ -419,7 +418,6 @@ export default function Scene3D() {
     const originals = new Float32Array(COUNT * 3);
     const targets = new Float32Array(COUNT * 3);
     const velocities = new Float32Array(COUNT * 3);
-    const explodeDir = new Float32Array(COUNT * 3);
     const randoms = new Float32Array(COUNT);
     let phase = 0;
     let phaseStart = 0;
@@ -620,35 +618,6 @@ export default function Scene3D() {
     hudPlane.position.z = 0.055;
     monitor.add(hudPlane);
 
-    // ─── Word shapes / targets / transitions ─────────────────
-    const wordCache: Record<string, [number, number][]> = {};
-    function sampleWord(text: string) {
-      if (wordCache[text]) return wordCache[text];
-      const W = 640, H = 160;
-      const c = document.createElement("canvas");
-      c.width = W; c.height = H;
-      const ctx = c.getContext("2d")!;
-      ctx.fillStyle = "#fff";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      let fs = 110;
-      ctx.font = `900 ${fs}px 'Helvetica Neue', Arial, sans-serif`;
-      const w = ctx.measureText(text).width;
-      if (w > W - 40) {
-        fs = Math.floor(fs * (W - 40) / w);
-        ctx.font = `900 ${fs}px 'Helvetica Neue', Arial, sans-serif`;
-      }
-      ctx.fillText(text, W / 2, H / 2 + 4);
-      const img = ctx.getImageData(0, 0, W, H).data;
-      const pts: [number, number][] = [];
-      for (let y = 0; y < H; y += 2)
-        for (let x = 0; x < W; x += 2)
-          if (img[(y * W + x) * 4 + 3] > 128)
-            pts.push([(x / W - 0.5) * 3.8, (0.5 - y / H) * 0.95]);
-      wordCache[text] = pts;
-      return pts;
-    }
-
     // Digit-face shapes for the terminal avatar — drawn as canvas strokes,
     // sampled into particle targets so the face gets the same 3D ascii-digit
     // treatment as the word morphs. Box head, not circular.
@@ -725,48 +694,23 @@ export default function Scene3D() {
           tx = Math.round(ox * 1.3 / s) * s;
           ty = Math.round(oy * 1.3 / s) * s;
           tz = Math.round(oz * 1.3 / s) * s;
-        } else if (mode === "terminal") {
+        } else {
           const pts = sampleFace(faceExpr, faceFlap);
           const p = pts[i % pts.length];
           tx = p[0] - 1.45 + (randoms[i] - 0.5) * 0.02;
           ty = p[1] + 0.1 + ((randoms[i] * 7.31) % 1 - 0.5) * 0.02;
           tz = (((randoms[i] * 13.7) % 1) - 0.5) * 0.3;
-        } else {
-          const pts = sampleWord(WORD_TEXT[mode]);
-          const p = pts[i % pts.length];
-          tx = p[0] + (randoms[i] - 0.5) * 0.02;
-          ty = p[1] + ((randoms[i] * 7.31) % 1 - 0.5) * 0.02;
-          tz = (((randoms[i] * 13.7) % 1) - 0.5) * 0.35;
         }
         targets[i * 3] = tx; targets[i * 3 + 1] = ty; targets[i * 3 + 2] = tz;
       }
     }
     computeTargets();
 
-    function startExplode() {
-      for (let i = 0; i < COUNT; i++) {
-        const px = positions[i * 3], py = positions[i * 3 + 1], pz = positions[i * 3 + 2];
-        let nx = px, ny = py, nz = pz;
-        const len = Math.hypot(nx, ny, nz) || 1;
-        nx = nx / len + (randoms[i] - 0.5) * 0.9;
-        ny = ny / len + ((randoms[i] * 3.1) % 1 - 0.5) * 0.9;
-        nz = nz / len + ((randoms[i] * 7.7) % 1 - 0.5) * 0.9;
-        const l2 = Math.hypot(nx, ny, nz) || 1;
-        const speed = 0.032 + randoms[i] * 0.025;
-        explodeDir[i * 3] = nx / l2 * speed;
-        explodeDir[i * 3 + 1] = ny / l2 * speed;
-        explodeDir[i * 3 + 2] = nz / l2 * speed;
-      }
-      phase = 1;
-      phaseStart = performance.now() / 1000;
-    }
-
     function setMode(m: SphereMode) {
       if (m === mode) return;
       mode = m;
       computeTargets();
-      if (isWordMode(m)) startExplode(); // shatter into the word
-      else if (m === "terminal") {
+      if (m === "terminal") {
         // Gentle snap into the face — no explosion, just the quick re-piece
         phase = 2;
         phaseStart = performance.now() / 1000;
@@ -1250,10 +1194,63 @@ export default function Scene3D() {
     // ─── Interaction state ───────────────────────────────────
     const pointerVP = { x: 0.5, y: 0.5 };        // viewport fractions
     const crt = { cx: 50, cy: 40 };              // screen-space %
-    let hovNav: NavId | null = null;
-    let idleTimer: ReturnType<typeof setTimeout> | null = null;
     const pressedCodes = new Set<string>();
     const buttons = { left: false, right: false };
+
+    // ─── LamOS state machine — boot splash → desktop → windows ─
+    let osState: "boot" | "desktop" = "boot";
+    let bootStart = performance.now();
+    let bootDur = 1000 + Math.random() * 1000; // random 1–2s boot
+    let openPage: PageId | null = null;
+    let pageScroll = 0;
+    let pageMax = 0;               // max scroll, measured from painted content
+    let windowOpenedAt = 0;        // drives the skill-bar fill animation
+    let uselessClicks = 0;
+    // On-screen (HUD px) rect of the projects page's useless button, refreshed
+    // every painted frame so scrolled positions stay clickable
+    let uselessBtnRect: { x: number; y: number; w: number; h: number } | null = null;
+
+    const TITLE_H = 56;
+    const XB = { x: 14, y: 12, w: 34, h: 32 }; // close button, top-left
+    const inRect = (px: number, py: number, r: { x: number; y: number; w: number; h: number }) =>
+      px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
+    function iconRect(i: number) {
+      return { x: 36, y: 84 + i * 112, w: 168, h: 112 };
+    }
+
+    function openWindow(id: PageId) {
+      openPage = id;
+      pageScroll = 0;
+      pageMax = 0;
+      uselessBtnRect = null;
+      windowOpenedAt = performance.now();
+      setMode(id === "chat" ? "terminal" : "lattice");
+    }
+    function closeWindow() {
+      openPage = null;
+      uselessBtnRect = null;
+      setMode("lattice");
+    }
+    function reboot() {
+      osState = "boot";
+      bootStart = performance.now();
+      bootDur = 1000 + Math.random() * 1000;
+      closeWindow();
+    }
+
+    function handleScreenClick(px: number, py: number) {
+      if (osState === "boot") return;
+      if (!openPage) {
+        for (let i = 0; i < DESKTOP_ICONS.length; i++) {
+          if (inRect(px, py, iconRect(i))) { openWindow(DESKTOP_ICONS[i].id); return; }
+        }
+        return;
+      }
+      if (inRect(px, py, XB)) { closeWindow(); return; }
+      if (openPage === "projects" && uselessBtnRect && inRect(px, py, uselessBtnRect)) {
+        uselessClicks++;
+      }
+    }
 
     const raycaster = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
@@ -1266,14 +1263,6 @@ export default function Scene3D() {
     );
     pickPlane.position.z = 0.055;
     monitor.add(pickPlane);
-
-    function zoneAt(cx: number, cy: number): NavId | null {
-      if (cy < 87) return null;
-      if (cx < 25) return "about";
-      if (cx < 50) return "work";
-      if (cx < 75) return "projects";
-      return "terminal";
-    }
 
     let overScreen = true;
 
@@ -1298,20 +1287,6 @@ export default function Scene3D() {
       }
       if (!screenOn) overScreen = false; // dark screen: nothing to point at
       mount.style.cursor = overScreen ? "none" : "pointer";
-      const z = overScreen ? zoneAt(crt.cx, crt.cy) : null;
-      if (z !== hovNav) {
-        hovNav = z;
-        if (hovNav) { clearIdle(); setMode(hovNav); }
-        else armIdle();
-      }
-    }
-
-    // Idle: revert word modes to the lattice after 2 minutes without a click
-    const IDLE_MS = 120_000;
-    function clearIdle() { if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; } }
-    function armIdle() {
-      clearIdle();
-      idleTimer = setTimeout(() => { if (isWordMode(mode)) setMode("lattice"); }, IDLE_MS);
     }
 
     function isWithin(obj: THREE.Object3D, root: THREE.Object3D) {
@@ -1324,7 +1299,6 @@ export default function Scene3D() {
     }
 
     function onClick(e: MouseEvent) {
-      armIdle(); // any click restarts the 2-minute idle countdown
       ndc.set((e.clientX / window.innerWidth) * 2 - 1, -((e.clientY / window.innerHeight) * 2 - 1));
       raycaster.setFromCamera(ndc, camera);
       // First-hit test against the clickable objects AND their occluders, so
@@ -1334,7 +1308,11 @@ export default function Scene3D() {
       // otherwise swallows every click before it can reach the radio.
       const first = hits.find(h => h.object !== pickPlane && (h.object as THREE.Mesh).isMesh && h.object.visible)?.object;
       if (first) {
-        if (isWithin(first, powerButton)) { screenOn = !screenOn; return; }
+        if (isWithin(first, powerButton)) {
+          screenOn = !screenOn;
+          if (screenOn) reboot(); // powering back on re-runs the LamOS splash
+          return;
+        }
         if (isWithin(first, radio)) { toggleRadio(); return; }
         if (isWithin(first, calendarG)) {
           // The prism's Book Now — opens the real Calendly page
@@ -1342,7 +1320,9 @@ export default function Scene3D() {
           return;
         }
       }
-      if (hovNav && screenOn) setMode(hovNav);
+      if (screenOn && overScreen) {
+        handleScreenClick(crt.cx / 100 * HUD_W, crt.cy / 100 * HUD_H);
+      }
     }
     function onMouseDown(e: MouseEvent) {
       if (e.button === 0) buttons.left = true;
@@ -1355,8 +1335,8 @@ export default function Scene3D() {
     function onContextMenu(e: MouseEvent) { e.preventDefault(); }
     function onKeyDown(e: KeyboardEvent) {
       pressedCodes.add(e.code);
-      // Terminal input capture
-      if (mode === "terminal" && screenOn) {
+      // Terminal input capture — only while lets_chat.exe is open
+      if (openPage === "chat" && screenOn) {
         if (e.key === "Enter") void submitTerminal();
         else if (e.key === "Backspace") termInput = termInput.slice(0, -1);
         else if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
@@ -1366,8 +1346,16 @@ export default function Scene3D() {
     }
     function onKeyUp(e: KeyboardEvent) { pressedCodes.delete(e.code); }
 
+    // Scroll the open window's content (chat manages its own layout)
+    function onWheel(e: WheelEvent) {
+      if (screenOn && overScreen && openPage && openPage !== "chat") {
+        pageScroll = Math.max(0, Math.min(pageMax, pageScroll + e.deltaY));
+      }
+    }
+
     window.addEventListener("mousemove", onPointerMove);
     window.addEventListener("click", onClick);
+    window.addEventListener("wheel", onWheel, { passive: true });
     window.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mouseup", onMouseUp);
     window.addEventListener("contextmenu", onContextMenu);
@@ -1381,16 +1369,468 @@ export default function Scene3D() {
     }
     window.addEventListener("resize", onResize);
 
-    // ─── HUD painting ────────────────────────────────────────
-    const TAB_H = Math.round(HUD_H * 0.13);
+    // ─── HUD painting — LamOS: boot splash → desktop → windows ─
     let vignette: CanvasGradient | null = null;
+    const MONO = "ui-monospace, Menlo, monospace";
+    const MARKER = "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive";
 
-    function drawHUD() {
-      hud.clearRect(0, 0, HUD_W, HUD_H);
+    function drawBoot(now: number) {
+      hud.fillStyle = "#000000";
+      hud.fillRect(0, 0, HUD_W, HUD_H);
+      hud.textBaseline = "middle";
+      // Hand-drawn LamOS wordmark — white outline only, like the sketch
+      hud.textAlign = "center";
+      hud.strokeStyle = "#ffffff";
+      hud.lineWidth = 3.5;
+      hud.font = `italic 900 130px ${MARKER}`;
+      hud.strokeText("LamOS", HUD_W / 2 - 20, 300);
+      hud.lineWidth = 2;
+      hud.font = `700 30px ${MARKER}`;
+      hud.strokeText("TM", HUD_W / 2 + 250, 224);
+      // Segmented win9x-style progress pill
+      const progress = Math.min(1, (now - bootStart) / bootDur);
+      const pw = 400, ph = 62, bx = (HUD_W - pw) / 2, by = 440, r = ph / 2;
+      hud.strokeStyle = "#ffffff";
+      hud.lineWidth = 3;
+      hud.beginPath();
+      hud.moveTo(bx + r, by);
+      hud.arcTo(bx + pw, by, bx + pw, by + ph, r);
+      hud.arcTo(bx + pw, by + ph, bx, by + ph, r);
+      hud.arcTo(bx, by + ph, bx, by, r);
+      hud.arcTo(bx, by, bx + pw, by, r);
+      hud.closePath();
+      hud.stroke();
+      const filled = Math.max(1, Math.floor(progress * 10));
+      hud.fillStyle = "#ffffff";
+      for (let i = 0; i < filled; i++) {
+        hud.fillRect(bx + 22 + i * 36, by + 14, 28, ph - 28);
+      }
+    }
 
-      // Terminal — avatar chat pane; the face itself is particles rendered by
-      // the ascii-digit pipeline behind this HUD (see computeTargets).
-      if (mode === "terminal") {
+    function drawIconGraphic(kind: "folder" | "exe", cx: number, ty: number) {
+      if (kind === "folder") {
+        hud.fillStyle = "#c99b2f";
+        hud.fillRect(cx - 30, ty, 26, 12);        // tab
+        hud.fillRect(cx - 32, ty + 8, 64, 44);    // back
+        hud.fillStyle = S_ACCENT;
+        hud.fillRect(cx - 32, ty + 20, 64, 32);   // front flap
+        hud.strokeStyle = "#241a0a";
+        hud.lineWidth = 2;
+        hud.strokeRect(cx - 32, ty + 8, 64, 44);
+      } else {
+        // Mini CRT running the digit face
+        hud.fillStyle = "#d8d0ba";
+        hud.fillRect(cx - 32, ty, 64, 46);
+        hud.fillStyle = "#12100c";
+        hud.fillRect(cx - 25, ty + 6, 50, 34);
+        hud.fillStyle = S_ACCENT;
+        hud.fillRect(cx - 16, ty + 14, 8, 8);
+        hud.fillRect(cx + 8, ty + 14, 8, 8);
+        hud.fillRect(cx - 12, ty + 30, 24, 5);
+        hud.strokeStyle = "#241a0a";
+        hud.lineWidth = 2;
+        hud.strokeRect(cx - 32, ty, 64, 46);
+        hud.fillStyle = "#d8d0ba";
+        hud.fillRect(cx - 10, ty + 46, 20, 7);
+        hud.fillRect(cx - 18, ty + 53, 36, 4);
+      }
+    }
+
+    function drawDesktop(px: number, py: number) {
+      hud.fillStyle = "#050505";
+      hud.fillRect(0, 0, HUD_W, HUD_H);
+      hud.textBaseline = "middle";
+      DESKTOP_ICONS.forEach((icon, i) => {
+        const r = iconRect(i);
+        const hov = overScreen && inRect(px, py, r);
+        if (hov) {
+          hud.fillStyle = "rgba(232,197,71,0.10)";
+          hud.fillRect(r.x, r.y, r.w, r.h);
+          hud.strokeStyle = "rgba(232,197,71,0.55)";
+          hud.lineWidth = 1;
+          hud.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+        }
+        const cx = r.x + r.w / 2;
+        drawIconGraphic(icon.kind, cx, r.y + 12);
+        hud.font = `500 17px ${MONO}`;
+        hud.textAlign = "center";
+        hud.fillStyle = hov ? S_ACCENT : S_INK;
+        hud.fillText(icon.label, cx, r.y + 90);
+      });
+      hud.font = `500 15px ${MONO}`;
+      hud.textAlign = "right";
+      hud.fillStyle = S_DIM;
+      hud.fillText("LamOS™ v0.1 — it barely works", HUD_W - 24, HUD_H - 24);
+    }
+
+    function drawTitleBar(title: string, px: number, py: number) {
+      hud.fillStyle = "rgba(16,13,10,0.97)";
+      hud.fillRect(0, 0, HUD_W, TITLE_H);
+      hud.fillStyle = S_LINE;
+      hud.fillRect(0, TITLE_H - 2, HUD_W, 2);
+      // Close button — top-left, back to the desktop
+      const hov = overScreen && inRect(px, py, XB);
+      hud.fillStyle = hov ? "#e8654e" : "#d94f38";
+      hud.fillRect(XB.x, XB.y, XB.w, XB.h);
+      hud.strokeStyle = "#241a0a";
+      hud.lineWidth = 2;
+      hud.strokeRect(XB.x, XB.y, XB.w, XB.h);
+      hud.strokeStyle = "#ffffff";
+      hud.lineWidth = 3;
+      hud.beginPath();
+      hud.moveTo(XB.x + 10, XB.y + 9);
+      hud.lineTo(XB.x + XB.w - 10, XB.y + XB.h - 9);
+      hud.moveTo(XB.x + XB.w - 10, XB.y + 9);
+      hud.lineTo(XB.x + 10, XB.y + XB.h - 9);
+      hud.stroke();
+      hud.font = `500 21px ${MONO}`;
+      hud.textAlign = "left";
+      hud.textBaseline = "middle";
+      hud.fillStyle = S_INK;
+      hud.fillText(`C:\\ ${title}`, XB.x + XB.w + 18, TITLE_H / 2 + 1);
+    }
+
+    // ── Window pages — neocities-grade filler until the real content lands ──
+    function sectionHeader(text: string, y: number) {
+      hud.textAlign = "left";
+      hud.font = `700 22px ${MONO}`;
+      hud.fillStyle = S_ACCENT;
+      hud.fillText(text, 84, y);
+      return y + 36;
+    }
+
+    function paintAbout(now: number) {
+      let y = 24;
+      hud.textAlign = "center";
+      hud.textBaseline = "middle";
+      hud.font = `700 30px ${MONO}`;
+      hud.fillStyle = S_ACCENT;
+      hud.fillText("~*~ ABOUT ME ~*~", HUD_W / 2, y); y += 58;
+      hud.font = `900 44px ${MARKER}`;
+      hud.fillStyle = S_INK;
+      hud.fillText("hi, i'm adrian!", HUD_W / 2, y); y += 56;
+      hud.font = `500 20px ${MONO}`;
+      hud.fillStyle = S_DIM;
+      [
+        "[ filler bio — the real one is coming, promise ]",
+        "software engineer · new york city",
+        "i like building weird little computers inside computers,",
+        "lifting heavy things, and mission control radio.",
+        "this entire site runs on a CRT that doesn't exist.",
+      ].forEach(l => { hud.fillText(l, HUD_W / 2, y); y += 30; });
+      y += 14;
+      hud.fillStyle = S_LINE;
+      hud.fillRect(120, y, HUD_W - 240, 2); y += 40;
+
+      y = sectionHeader(">> fave things", y);
+      hud.font = `500 19px ${MONO}`;
+      ([
+        ["editor", "the one that starts flame wars"],
+        ["coffee order", "yes"],
+        ["operating system", "LamOS (obviously)"],
+        ["gym lift", "deadlift, ask me about my back"],
+      ] as const).forEach(([k, v]) => {
+        hud.fillStyle = S_ACCENT;
+        hud.fillText(`· ${k}:`, 104, y);
+        hud.fillStyle = S_INK;
+        hud.fillText(v, 340, y);
+        y += 30;
+      });
+      y += 24;
+
+      // Visitor counter — mandatory on any self-respecting 90s page
+      hud.fillStyle = "#000000";
+      hud.fillRect(HUD_W / 2 - 150, y, 300, 54);
+      hud.strokeStyle = S_DIM;
+      hud.lineWidth = 2;
+      hud.strokeRect(HUD_W / 2 - 150, y, 300, 54);
+      hud.textAlign = "center";
+      hud.font = `700 26px ${MONO}`;
+      hud.fillStyle = "#5dff5d";
+      hud.fillText("visitor № 001337", HUD_W / 2, y + 28);
+      y += 84;
+
+      // Blinking UNDER CONSTRUCTION tape
+      if (Math.floor(now / 600) % 2 === 0) {
+        const bw = 460, bx = HUD_W / 2 - bw / 2, bh = 48;
+        hud.save();
+        hud.beginPath();
+        hud.rect(bx, y, bw, bh);
+        hud.clip();
+        hud.fillStyle = "#e8c547";
+        hud.fillRect(bx, y, bw, bh);
+        hud.fillStyle = "#141414";
+        for (let sx = -48; sx < bw + 48; sx += 48) {
+          hud.beginPath();
+          hud.moveTo(bx + sx, y + bh);
+          hud.lineTo(bx + sx + 24, y + bh);
+          hud.lineTo(bx + sx + 44, y);
+          hud.lineTo(bx + sx + 20, y);
+          hud.closePath();
+          hud.fill();
+        }
+        hud.fillStyle = "#e8c547";
+        hud.fillRect(bx + 70, y + 8, bw - 140, bh - 16);
+        hud.fillStyle = "#141414";
+        hud.font = `900 21px ${MONO}`;
+        hud.fillText("UNDER CONSTRUCTION", HUD_W / 2, y + bh / 2 + 1);
+        hud.restore();
+      }
+      y += 78;
+
+      hud.font = `500 15px ${MONO}`;
+      hud.fillStyle = S_DIM;
+      hud.fillText("best viewed at 1024×768 · guestbook lives in extras", HUD_W / 2, y);
+      return y + 30;
+    }
+
+    function paintWork(now: number) {
+      let y = 16;
+      hud.textBaseline = "middle";
+      hud.textAlign = "left";
+      hud.font = `500 17px ${MONO}`;
+      hud.fillStyle = S_DIM;
+      hud.fillText("C:\\adrian\\resume.doc — [ filler resume, swap in the real one ]", 84, y); y += 42;
+
+      const jobs = [
+        {
+          role: "Software Engineer", co: "[Company Name]", when: "2024 — now",
+          pts: [
+            "shipped [big feature] used by [impressive number] of people",
+            "wrangled [distributed system] until it stopped catching fire",
+            "wrote docs nobody read, then rewrote them as memes",
+          ],
+        },
+        {
+          role: "Software Engineer", co: "[Previous Co]", when: "2022 — 2024",
+          pts: [
+            "built [internal tool] that saved the team [n] hours a week",
+            "survived [framework migration] with most of my sanity",
+          ],
+        },
+        {
+          role: "SWE Intern", co: "[Scrappy Startup]", when: "summer 2021",
+          pts: [
+            "touched prod on day two (it was fine) (it was mostly fine)",
+            "learned more from the outage than from the onboarding",
+          ],
+        },
+      ];
+      for (const job of jobs) {
+        const h = 52 + job.pts.length * 27 + 12;
+        hud.strokeStyle = "#3a342a";
+        hud.lineWidth = 2;
+        hud.strokeRect(60, y, HUD_W - 120, h);
+        hud.font = `700 23px ${MONO}`;
+        hud.fillStyle = S_ACCENT;
+        hud.fillText(job.role, 84, y + 30);
+        const rw = hud.measureText(job.role).width;
+        hud.font = `500 20px ${MONO}`;
+        hud.fillStyle = S_INK;
+        hud.fillText(`@ ${job.co}`, 84 + rw + 14, y + 30);
+        hud.textAlign = "right";
+        hud.font = `500 17px ${MONO}`;
+        hud.fillStyle = S_DIM;
+        hud.fillText(job.when, HUD_W - 84, y + 30);
+        hud.textAlign = "left";
+        hud.font = `500 19px ${MONO}`;
+        hud.fillStyle = S_INK;
+        job.pts.forEach((p, i) => hud.fillText(`▸ ${p}`, 100, y + 62 + i * 27));
+        y += h + 18;
+      }
+      y += 12;
+
+      y = sectionHeader(">> education", y);
+      hud.font = `500 19px ${MONO}`;
+      hud.fillStyle = S_INK;
+      hud.fillText("[University Name] — B.S. Computer Science, class of [year]", 104, y);
+      y += 48;
+
+      // Skill bars fill up when the window opens — RPG stat-screen rules
+      y = sectionHeader(">> skill points", y);
+      const anim = Math.min(1, (now - windowOpenedAt) / 900);
+      ([
+        ["typescript", 92],
+        ["three.js", 78],
+        ["css wizardry", 66],
+        ["talking to CRTs", 99],
+      ] as const).forEach(([name, v]) => {
+        hud.font = `500 19px ${MONO}`;
+        hud.fillStyle = S_INK;
+        hud.fillText(name, 104, y);
+        hud.strokeStyle = "#3a342a";
+        hud.lineWidth = 2;
+        hud.strokeRect(330, y - 10, 420, 20);
+        hud.fillStyle = S_ACCENT;
+        hud.fillRect(333, y - 7, 414 * (v / 100) * anim, 14);
+        hud.font = `500 16px ${MONO}`;
+        hud.fillStyle = S_DIM;
+        hud.fillText(String(Math.round(v * anim)), 766, y);
+        y += 36;
+      });
+      return y + 20;
+    }
+
+    function paintProjects(px: number, py: number) {
+      let y = 24;
+      hud.textBaseline = "middle";
+      hud.textAlign = "center";
+      hud.font = `700 28px ${MONO}`;
+      hud.fillStyle = S_ACCENT;
+      hud.fillText("★ personal projects ★", HUD_W / 2, y); y += 40;
+      hud.font = `500 17px ${MONO}`;
+      hud.fillStyle = S_DIM;
+      hud.fillText("[ filler cards — real projects incoming ]", HUD_W / 2, y); y += 42;
+
+      const projects = [
+        { name: "this website", desc: "a fake OS on a fake CRT on a (real?) desk. you are here.", tags: "three.js · shaders · canvas", stars: 5 },
+        { name: "digit-face terminal", desc: "the lil guy in let's chat.exe — 5,500 particles doing an impression of me.", tags: "webgl · llm · particles", stars: 5 },
+        { name: "[project three]", desc: "[one-liner about a cool thing you built goes here]", tags: "[tags]", stars: 4 },
+        { name: "[project four]", desc: "[another cool thing — flash-game energy encouraged]", tags: "[tags]", stars: 3 },
+      ];
+      hud.textAlign = "left";
+      for (const p of projects) {
+        const h = 104;
+        hud.strokeStyle = "#3a342a";
+        hud.lineWidth = 2;
+        hud.strokeRect(60, y, HUD_W - 120, h);
+        hud.font = `700 22px ${MONO}`;
+        hud.fillStyle = S_ACCENT;
+        hud.fillText(p.name, 84, y + 28);
+        hud.textAlign = "right";
+        hud.fillText("★".repeat(p.stars) + "☆".repeat(5 - p.stars), HUD_W - 84, y + 28);
+        hud.textAlign = "left";
+        hud.font = `500 19px ${MONO}`;
+        hud.fillStyle = S_INK;
+        hud.fillText(p.desc, 84, y + 58);
+        hud.font = `500 16px ${MONO}`;
+        hud.fillStyle = S_DIM;
+        hud.fillText(p.tags, 84, y + 84);
+        y += h + 16;
+      }
+      y += 14;
+
+      // The useless button — peak flash-game interactivity
+      const bw = 320, bh = 52, bx = HUD_W / 2 - bw / 2;
+      uselessBtnRect = { x: bx, y: y + TITLE_H + 24 - pageScroll, w: bw, h: bh };
+      const hov = overScreen && inRect(px, py, uselessBtnRect);
+      hud.fillStyle = hov ? "rgba(232,197,71,0.18)" : "rgba(232,197,71,0.07)";
+      hud.fillRect(bx, y, bw, bh);
+      hud.strokeStyle = S_ACCENT;
+      hud.lineWidth = 2;
+      hud.strokeRect(bx, y, bw, bh);
+      hud.textAlign = "center";
+      hud.font = `500 20px ${MONO}`;
+      hud.fillStyle = S_INK;
+      hud.fillText(
+        uselessClicks === 0
+          ? "do not click this button"
+          : `clicked ${uselessClicks} time${uselessClicks === 1 ? "" : "s"}`,
+        HUD_W / 2, y + bh / 2 + 1
+      );
+      y += bh + 30;
+      if (uselessClicks >= 10) {
+        hud.font = `500 16px ${MONO}`;
+        hud.fillStyle = S_DIM;
+        hud.fillText("ok you can stop now", HUD_W / 2, y);
+        y += 26;
+      }
+      return y + 10;
+    }
+
+    function paintExtras(now: number) {
+      let y = 22;
+      hud.textBaseline = "middle";
+      // Marquee — obligatory
+      hud.font = `700 21px ${MONO}`;
+      hud.fillStyle = S_ACCENT;
+      hud.textAlign = "left";
+      const mtext = "✦ welcome to the extras zone ✦ thanks for scrolling ✦ sign the guestbook ✦ ";
+      const mw = hud.measureText(mtext).width;
+      const off = (now / 20) % mw;
+      hud.fillText(mtext, -off, y);
+      hud.fillText(mtext, -off + mw, y);
+      hud.fillText(mtext, -off + mw * 2, y);
+      y += 54;
+
+      y = sectionHeader(">> hobbies", y);
+      hud.font = `500 19px ${MONO}`;
+      hud.fillStyle = S_INK;
+      [
+        "· gym — the dumbbell on my desk is load-bearing",
+        "· radio — press play on the grey box next to the monitor",
+        "· skies — the window out there runs on real new york time",
+      ].forEach(l => { hud.fillText(l, 104, y); y += 30; });
+      y += 24;
+
+      y = sectionHeader(">> webring", y);
+      hud.textAlign = "center";
+      hud.font = `500 20px ${MONO}`;
+      hud.fillStyle = S_ACCENT;
+      hud.fillText("<< prev · random · next >>", HUD_W / 2, y); y += 28;
+      hud.font = `500 15px ${MONO}`;
+      hud.fillStyle = S_DIM;
+      hud.fillText("(links coming soon — the ring is currently just me)", HUD_W / 2, y); y += 48;
+
+      hud.textAlign = "left";
+      y = sectionHeader(">> guestbook", y);
+      ([
+        ["xX_websurfer_Xx", "cool site!! how do i get out of the CRT"],
+        ["mom", "very nice honey"],
+        ["[your name here]", "sign it by yelling at let's chat.exe"],
+      ] as const).forEach(([who, msg]) => {
+        hud.strokeStyle = "#3a342a";
+        hud.lineWidth = 2;
+        hud.strokeRect(60, y, HUD_W - 120, 54);
+        hud.font = `700 18px ${MONO}`;
+        hud.fillStyle = S_ACCENT;
+        hud.fillText(who, 84, y + 28);
+        hud.font = `500 18px ${MONO}`;
+        hud.fillStyle = S_INK;
+        hud.fillText(msg, 330, y + 28);
+        y += 68;
+      });
+      y += 12;
+
+      y = sectionHeader(">> site stats", y);
+      hud.font = `500 18px ${MONO}`;
+      hud.fillStyle = S_DIM;
+      hud.fillText("powered by: 1 imaginary CRT · 5,500 digits · zero divs", 104, y);
+      return y + 30;
+    }
+
+    function drawPage(id: Exclude<PageId, "chat">, now: number, px: number, py: number) {
+      hud.fillStyle = "#0a0806";
+      hud.fillRect(0, 0, HUD_W, HUD_H);
+      uselessBtnRect = null;
+      hud.save();
+      hud.beginPath();
+      hud.rect(0, TITLE_H, HUD_W, HUD_H - TITLE_H);
+      hud.clip();
+      hud.translate(0, TITLE_H + 24 - pageScroll);
+      let bottom = 0;
+      if (id === "about") bottom = paintAbout(now);
+      else if (id === "work") bottom = paintWork(now);
+      else if (id === "projects") bottom = paintProjects(px, py);
+      else bottom = paintExtras(now);
+      hud.restore();
+      pageMax = Math.max(0, bottom - (HUD_H - TITLE_H - 48));
+      if (pageScroll > pageMax) pageScroll = pageMax;
+      // Chunky retro scrollbar
+      if (pageMax > 0) {
+        const trackY = TITLE_H + 8, trackH = HUD_H - TITLE_H - 16;
+        hud.fillStyle = "rgba(232,197,71,0.08)";
+        hud.fillRect(HUD_W - 18, trackY, 10, trackH);
+        const thumbH = Math.max(40, trackH * (trackH / (trackH + pageMax)));
+        const thumbY = trackY + (trackH - thumbH) * (pageScroll / pageMax);
+        hud.fillStyle = S_DIM;
+        hud.fillRect(HUD_W - 18, thumbY, 10, thumbH);
+      }
+    }
+
+    // Chat — avatar pane; the face itself is particles rendered by the
+    // ascii-digit pipeline behind this HUD (see computeTargets).
+    function drawChat() {
         const now = performance.now();
         if (!termGreeted) {
           termGreeted = true;
@@ -1429,19 +1869,19 @@ export default function Scene3D() {
           return out;
         };
 
-        // User's message — small bubble, top right
+        // User's message — small bubble, top right (below the title bar)
         if (lastUserMsg) {
           const uLines = wrap(lastUserMsg, 480);
           const uw = Math.min(480, Math.max(...uLines.map(l => hud.measureText(l).width))) + 32;
           const ux = HUD_W - 24 - uw;
           const uh = uLines.length * 27 + 22;
           hud.fillStyle = "rgba(232,197,71,0.07)";
-          hud.fillRect(ux, 22, uw, uh);
+          hud.fillRect(ux, TITLE_H + 14, uw, uh);
           hud.strokeStyle = S_DIM;
           hud.lineWidth = 2;
-          hud.strokeRect(ux, 22, uw, uh);
+          hud.strokeRect(ux, TITLE_H + 14, uw, uh);
           hud.fillStyle = S_INK;
-          uLines.forEach((l, i) => hud.fillText(l, ux + 16, 40 + i * 27));
+          uLines.forEach((l, i) => hud.fillText(l, ux + 16, TITLE_H + 32 + i * 27));
         }
 
         // Bot speech bubble — tail pointing at the particle face (screen-left)
@@ -1453,7 +1893,7 @@ export default function Scene3D() {
           : [termBusy ? "•".repeat(1 + (Math.floor(now / 300) % 3)) : ""];
         if (bLines[0] !== "") {
           const bh = bLines.length * 27 + 26;
-          const by = Math.max(96, Math.min(FY - bh / 2, HUD_H - TAB_H - 110 - bh));
+          const by = Math.max(TITLE_H + 40, Math.min(FY - bh / 2, HUD_H - 200 - bh));
           hud.fillStyle = "rgba(23,19,14,0.96)";
           hud.fillRect(BX, by, BW, bh);
           hud.strokeStyle = S_ACCENT;
@@ -1474,8 +1914,8 @@ export default function Scene3D() {
           bLines.forEach((l, i) => hud.fillText(l, BX + 18, by + 22 + i * 27));
         }
 
-        // ── Chatbox — bottom aligned, above the tabs ──
-        const iy = HUD_H - TAB_H - 74;
+        // ── Chatbox — bottom aligned ──
+        const iy = HUD_H - 84;
         hud.fillStyle = "rgba(23,19,14,0.96)";
         hud.fillRect(20, iy, HUD_W - 40, 56);
         hud.strokeStyle = S_LINE;
@@ -1496,37 +1936,26 @@ export default function Scene3D() {
           hud.fillStyle = S_ACCENT;
           hud.fillRect(38 + cw + 5, iy + 17, 12, 24);
         }
-      }
+    }
 
-      // Tabs
-      const y0 = HUD_H - TAB_H;
-      hud.fillStyle = "rgba(18,16,12,0.95)";
-      hud.fillRect(0, y0, HUD_W, TAB_H);
-      hud.fillStyle = S_LINE;
-      hud.fillRect(0, y0, HUD_W, 2);
-      const cellW = HUD_W / NAV_TABS.length;
-      hud.font = "500 21px ui-monospace, Menlo, monospace";
-      hud.textAlign = "center";
-      hud.textBaseline = "middle";
-      NAV_TABS.forEach((tab, i) => {
-        const x0 = i * cellW;
-        const hov = hovNav === tab.id;
-        const active = mode === tab.id;
-        if (hov || active) {
-          hud.fillStyle = hov ? "rgba(232,197,71,0.09)" : "rgba(232,197,71,0.05)";
-          hud.fillRect(x0, y0, cellW, TAB_H);
-        }
-        if (active) {
-          hud.fillStyle = S_ACCENT;
-          hud.fillRect(x0, y0, cellW, 4);
-        }
-        if (i > 0) {
-          hud.fillStyle = S_LINE;
-          hud.fillRect(x0, y0, 1, TAB_H);
-        }
-        hud.fillStyle = hov || active ? S_INK : S_DIM;
-        hud.fillText(tab.label, x0 + cellW / 2, y0 + TAB_H / 2 + 1);
-      });
+    function drawHUD() {
+      hud.clearRect(0, 0, HUD_W, HUD_H);
+      const now = performance.now();
+      const px = crt.cx / 100 * HUD_W;
+      const py = crt.cy / 100 * HUD_H;
+
+      if (osState === "boot" && now - bootStart >= bootDur) osState = "desktop";
+      if (osState === "boot") {
+        drawBoot(now);
+      } else if (!openPage) {
+        drawDesktop(px, py);
+      } else if (openPage === "chat") {
+        drawChat();
+        drawTitleBar(WINDOW_TITLES.chat, px, py);
+      } else {
+        drawPage(openPage, now, px, py);
+        drawTitleBar(WINDOW_TITLES[openPage], px, py);
+      }
 
       // Scanlines
       hud.fillStyle = "rgba(0,0,0,0.16)";
@@ -1541,10 +1970,11 @@ export default function Scene3D() {
       hud.fillStyle = vignette;
       hud.fillRect(0, 0, HUD_W, HUD_H);
 
-      // Now-playing message — top left corner while the radio plays.
+      // Now-playing message — bottom left while the radio plays (top-left now
+      // belongs to the window close button).
       // Queue = your recent Spotify top tracks; no banner without real tracks.
       const tracks = integrations.spotify?.topTracks ?? [];
-      if (radioPlaying && tracks.length > 0) {
+      if (radioPlaying && tracks.length > 0 && osState !== "boot") {
         hud.font = "500 24px ui-monospace, Menlo, monospace";
         hud.textAlign = "left";
         hud.textBaseline = "middle";
@@ -1552,9 +1982,9 @@ export default function Scene3D() {
         const msg = `🎵 Now Playing - ${tr.name} — ${tr.artist}`;
         const tw = hud.measureText(msg).width;
         hud.fillStyle = "rgba(18,16,12,0.82)";
-        hud.fillRect(16, 18, tw + 30, 42);
+        hud.fillRect(16, HUD_H - 60, tw + 30, 42);
         hud.fillStyle = S_ACCENT;
-        hud.fillText(msg, 32, 40);
+        hud.fillText(msg, 32, HUD_H - 38);
       }
 
       // Cursor arrow — only while the pointer is actually on the screen;
@@ -1598,17 +2028,7 @@ export default function Scene3D() {
       sphereMouse.lerp(sphereMouseTarget, 0.08);
 
       const nowS = now / 1000;
-      let attract = 0.03, damp = 0.88, kick = 0, teleport = false;
-      if (phase === 1) {
-        const age = nowS - phaseStart;
-        if (age < 0.12) {
-          attract = 0.0;
-          damp = 0.94;
-          kick = Math.exp(-age * 22.0) * 0.18;
-        } else {
-          phase = 2;
-        }
-      }
+      let attract = 0.03, damp = 0.88, teleport = false;
       if (phase === 2) {
         attract = 0.06;
         damp = 0.78;
@@ -1627,11 +2047,6 @@ export default function Scene3D() {
         const tty = ty + dy * infl;
         const ttz = tz + dz * infl * 0.3;
 
-        if (kick > 0) {
-          velocities[i * 3] += explodeDir[i * 3] * kick;
-          velocities[i * 3 + 1] += explodeDir[i * 3 + 1] * kick;
-          velocities[i * 3 + 2] += explodeDir[i * 3 + 2] * kick;
-        }
         if (teleport && Math.random() < 0.07) {
           positions[i * 3] = ttx; positions[i * 3 + 1] = tty; positions[i * 3 + 2] = ttz;
           velocities[i * 3] = 0; velocities[i * 3 + 1] = 0; velocities[i * 3 + 2] = 0;
@@ -1665,7 +2080,7 @@ export default function Scene3D() {
         points2.scale.setScalar(1 / 10);
         points2.rotation.y -= 0.007;
         points2.rotation.x = Math.sin(t * 0.22 + 1.7) * 0.16;
-      } else if (mode === "terminal") {
+      } else {
         points2.visible = false;
         // Talking mouth flap re-targets the particle face
         const flap = bubbleTyping && faceExpr === "neutral" && Math.floor(now / 150) % 2 === 0;
@@ -1700,12 +2115,6 @@ export default function Scene3D() {
         points.scale.lerp(new THREE.Vector3(1, 1, 1), 0.15);
         points.rotation.y *= 0.92;
         points.rotation.x *= 0.92;
-      } else {
-        points2.visible = false;
-        points.position.multiplyScalar(0.88);
-        points.scale.lerp(new THREE.Vector3(1, 1, 1), 0.15);
-        points.rotation.y += (Math.sin(t * 0.4) * 0.12 - points.rotation.y) * 0.04;
-        points.rotation.x += (Math.sin(t * 0.3) * 0.05 - points.rotation.x) * 0.04;
       }
 
       // ── Ceiling fan spin — its shadow sweeps the desk ──
@@ -1802,7 +2211,6 @@ export default function Scene3D() {
 
     return () => {
       cancelAnimationFrame(raf);
-      if (idleTimer) clearTimeout(idleTimer);
       clearInterval(skyInterval);
       embedController?.destroy?.();
       embedDiv.remove();
@@ -1810,6 +2218,7 @@ export default function Scene3D() {
       delete (window as any).onSpotifyIframeApiReady;
       window.removeEventListener("mousemove", onPointerMove);
       window.removeEventListener("click", onClick);
+      window.removeEventListener("wheel", onWheel);
       window.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mouseup", onMouseUp);
       window.removeEventListener("contextmenu", onContextMenu);
