@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import posterUrls from "virtual:posters";
 
 // Full 3D-polygon rendition of the workstation: CRT monitor, keyboard and
 // mouse are low-poly meshes with flat lambert shading and dark edge outlines.
@@ -109,7 +110,7 @@ export default function Scene3D() {
     scene.add(dir);
     // Amber spill from the CRT onto the desk and keyboard (off with the screen)
     const crtGlow = new THREE.PointLight(0xe8c547, 0.55, 9, 2);
-    crtGlow.position.set(0, 1.2, 1.6);
+    crtGlow.position.set(0, 1.2, 2.7); // stays ahead of the closer monitor
     scene.add(crtGlow);
 
     // ─── Shared materials / helpers ──────────────────────────
@@ -127,6 +128,37 @@ export default function Scene3D() {
       const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
       addEdges(m);
       return m;
+    }
+
+    // ─── Paintable faces — edit the PNGs in public/textures/ ─
+    // (guides/ has annotated copies marking zones hidden by other meshes.)
+    // Each material starts as the flat base colour and swaps to the texture
+    // once it loads, so a slow/missing PNG never flashes black.
+    const texLoader = new THREE.TextureLoader();
+    function paintedMat(url: string, base: number) {
+      const m = new THREE.MeshLambertMaterial({ color: base });
+      texLoader.load(url, (t) => {
+        t.colorSpace = THREE.SRGBColorSpace;
+        m.map = t;
+        m.color.set(0xffffff);
+        m.needsUpdate = true;
+      });
+      return m;
+    }
+    // BoxGeometry face order: 0 +x, 1 −x, 2 +y, 3 −y, 4 +z, 5 −z.
+    function faceMats(face: number, painted: THREE.Material, rest: THREE.Material) {
+      const mats: THREE.Material[] = new Array(6).fill(rest);
+      mats[face] = painted;
+      return mats;
+    }
+    // Point one box face at a sub-rectangle of its texture (v from the bottom).
+    function remapFaceUV(geo: THREE.BoxGeometry, face: number, u0: number, v0: number, u1: number, v1: number) {
+      const uv = geo.getAttribute("uv") as THREE.BufferAttribute;
+      const i = face * 4;
+      uv.setXY(i, u0, v1);
+      uv.setXY(i + 1, u1, v1);
+      uv.setXY(i + 2, u0, v0);
+      uv.setXY(i + 3, u1, v0);
     }
 
     // ─── Wooden desk ─────────────────────────────────────────
@@ -176,7 +208,7 @@ export default function Scene3D() {
     // ─── Wall — single-color light cream ─────────────────────
     const wall = new THREE.Mesh(
       new THREE.BoxGeometry(40, 24, 0.5),
-      new THREE.MeshLambertMaterial({ color: 0xe9e0c8 })
+      new THREE.MeshLambertMaterial({ color: 0xf1e8d0 }) // lightened from 0xe9e0c8
     );
     wall.position.set(0, 8, -4.5);
     wall.receiveShadow = true;
@@ -232,6 +264,31 @@ export default function Scene3D() {
       skyTexture.needsUpdate = true;
     }, 60_000);
 
+    // ─── Window easter egg — a dark silhouette walks past, rarely ────
+    // Rolled once, 5s after mount; 1-in-100 odds. Drawn as an overlay on the
+    // sky canvas so it composites with whatever time-of-day is showing.
+    let walkerRolled = false;
+    let walkerActive = false;
+    let walkerStart = 0;
+    let walkerDir = 1;
+    const WALKER_DELAY = 5000, WALKER_DURATION = 4200, WALKER_CHANCE = 0.01;
+    function drawWalker(ctx: CanvasRenderingContext2D, W: number, H: number, tt: number, dir: number) {
+      const progress = dir === 1 ? tt : 1 - tt;
+      const x = -30 + progress * (W + 60);
+      const y = H * 0.74; // roughly sidewalk level within the window view
+      const stride = Math.sin(tt * Math.PI * 16);
+      const bob = Math.abs(stride) * 2;
+      ctx.fillStyle = "rgba(4, 4, 8, 0.62)";
+      ctx.beginPath();
+      ctx.ellipse(x, y - 30 - bob, 5, 6, 0, 0, Math.PI * 2); // head
+      ctx.fill();
+      ctx.fillRect(x - 4, y - 24 - bob, 8, 18); // torso
+      ctx.fillRect(x - 4, y - 6 - bob, 3, 10 + stride * 4); // legs, scissoring
+      ctx.fillRect(x + 1, y - 6 - bob, 3, 10 - stride * 4);
+      ctx.fillRect(x - 6, y - 22 - bob, 2, 12 - stride * 3); // arms, swinging
+      ctx.fillRect(x + 4, y - 22 - bob, 2, 12 + stride * 3);
+    }
+
     const skyPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(WIN_W, WIN_H),
       new THREE.MeshBasicMaterial({ map: skyTexture })
@@ -280,11 +337,12 @@ export default function Scene3D() {
       const c = document.createElement("canvas");
       c.width = 512; c.height = 768;
       const ctx = c.getContext("2d")!;
-      // Paper + dark print
-      ctx.fillStyle = "#f2ecdc";
+      // White mat border + dark print, like a printed poster with margin
+      const BORDER = 34;
+      ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, 512, 768);
       ctx.fillStyle = "#12100c";
-      ctx.fillRect(22, 22, 468, 724);
+      ctx.fillRect(BORDER, BORDER, 512 - BORDER * 2, 768 - BORDER * 2);
       // Star field
       for (let i = 0; i < 130; i++) {
         ctx.fillStyle = `rgba(237, 228, 211, ${0.25 + Math.random() * 0.6})`;
@@ -322,11 +380,50 @@ export default function Scene3D() {
       tex.colorSpace = THREE.SRGBColorSpace;
       return tex;
     }
+    // A movie poster from public/posters/, picked at random each visit —
+    // downsampled onto a small canvas and magnified with nearest-neighbour
+    // sampling for a slight pixelation that matches the low-poly room.
+    // Until it loads (or if the folder is empty) the Apollo Drift print shows.
+    const posterMat = new THREE.MeshLambertMaterial({ map: createPosterTexture() });
+    if (posterUrls.length > 0) {
+      const url = posterUrls[Math.floor(Math.random() * posterUrls.length)];
+      const img = new Image();
+      img.onload = () => {
+        const PW = 144, PH = 216; // pixelation grid, same 2:3 as the print
+        const BORDER = Math.round(PW * (34 / 512)); // same margin ratio as the fallback print
+        const c = document.createElement("canvas");
+        c.width = PW; c.height = PH;
+        const ctx = c.getContext("2d")!;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, PW, PH);
+        // cover-fit crop, clipped to inside the white mat border
+        const innerW = PW - BORDER * 2, innerH = PH - BORDER * 2;
+        const s = Math.max(innerW / img.width, innerH / img.height);
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(BORDER, BORDER, innerW, innerH);
+        ctx.clip();
+        ctx.drawImage(
+          img,
+          BORDER + (innerW - img.width * s) / 2,
+          BORDER + (innerH - img.height * s) / 2,
+          img.width * s, img.height * s
+        );
+        ctx.restore();
+        const tex = new THREE.CanvasTexture(c);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.magFilter = THREE.NearestFilter;
+        posterMat.map?.dispose();
+        posterMat.map = tex;
+        posterMat.needsUpdate = true;
+      };
+      img.src = url;
+    }
     const poster = new THREE.Mesh(
-      new THREE.PlaneGeometry(5.7, 8.55), // 3x the original print
-      new THREE.MeshLambertMaterial({ map: createPosterTexture() })
+      new THREE.PlaneGeometry(5.4, 8.1), // slightly shrunk so the white mat border reads clearly
+      posterMat
     );
-    poster.position.set(-6.2, 3.4, -4.24);
+    poster.position.set(-6.9, 3.4, -4.24); // nudged left, clear of the monitor
     poster.rotation.z = 0.015; // hung ever-so-slightly crooked
     poster.receiveShadow = true; // fan shadow sweeps across the print, not behind it
     scene.add(poster);
@@ -359,7 +456,9 @@ export default function Scene3D() {
 
     // ─── Monitor ─────────────────────────────────────────────
     const monitor = new THREE.Group();
-    monitor.position.set(0, 1.42, 0);
+    // Pulled toward the viewer; the foot ends at z≈1.55, keyboard starts at
+    // z≈2.28, so nothing clips.
+    monitor.position.set(0, 1.42, 1.1);
     monitor.rotation.y = -0.12;
     scene.add(monitor);
 
@@ -368,16 +467,27 @@ export default function Scene3D() {
     const body = box(OUTER_W, OUTER_H, 1.7);
     body.position.z = -0.85;
     monitor.add(body);
-    // Bezel frame around the screen opening
+    // Bezel frame around the screen opening. All four bars sample
+    // monitor-bezel.png — one image spanning the whole OUTER_W × OUTER_H
+    // front, with each bar's UVs remapped to its slice of it.
     const barH = (OUTER_H - OPEN_H) / 2;
-    const topBar = box(OUTER_W, barH, FRAME_D);
-    topBar.position.set(0, OPEN_H / 2 + barH / 2, FRAME_D / 2);
-    const botBar = box(OUTER_W, barH, FRAME_D);
-    botBar.position.set(0, -(OPEN_H / 2 + barH / 2), FRAME_D / 2);
     const barW = (OUTER_W - OPEN_W) / 2;
-    const leftBar = box(barW, OPEN_H, FRAME_D);
+    const bezelMat = paintedMat("/textures/monitor-bezel.png", CREAM);
+    const uBar = barW / OUTER_W, vBar = barH / OUTER_H;
+    function bezelBar(w: number, h: number, u0: number, v0: number, u1: number, v1: number) {
+      const geo = new THREE.BoxGeometry(w, h, FRAME_D);
+      remapFaceUV(geo, 4, u0, v0, u1, v1);
+      const m = new THREE.Mesh(geo, faceMats(4, bezelMat, matCream));
+      addEdges(m);
+      return m;
+    }
+    const topBar = bezelBar(OUTER_W, barH, 0, 1 - vBar, 1, 1);
+    topBar.position.set(0, OPEN_H / 2 + barH / 2, FRAME_D / 2);
+    const botBar = bezelBar(OUTER_W, barH, 0, 0, 1, vBar);
+    botBar.position.set(0, -(OPEN_H / 2 + barH / 2), FRAME_D / 2);
+    const leftBar = bezelBar(barW, OPEN_H, 0, vBar, uBar, 1 - vBar);
     leftBar.position.set(-(OPEN_W / 2 + barW / 2), 0, FRAME_D / 2);
-    const rightBar = box(barW, OPEN_H, FRAME_D);
+    const rightBar = bezelBar(barW, OPEN_H, 1 - uBar, vBar, 1, 1 - vBar);
     rightBar.position.set(OPEN_W / 2 + barW / 2, 0, FRAME_D / 2);
     monitor.add(topBar, botBar, leftBar, rightBar);
     // Stand
@@ -405,6 +515,76 @@ export default function Scene3D() {
     );
     offPlane.position.z = 0.03;
     monitor.add(offPlane);
+
+    // ─── Post-it on the bottom-right bezel — right-click to lean in ─
+    function createPostItTexture() {
+      const c = document.createElement("canvas");
+      c.width = 128; c.height = 128;
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "#f2df6d";
+      ctx.fillRect(0, 0, 128, 128);
+      ctx.fillStyle = "rgba(0,0,0,0.07)";
+      ctx.fillRect(0, 116, 128, 12); // bottom-edge curl shadow
+      ctx.fillStyle = "#2b2417";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = "700 32px 'Comic Sans MS', 'Chalkboard SE', cursive";
+      ctx.fillText("lean", 64, 40);
+      ctx.fillText("in!", 64, 74);
+      ctx.font = "700 15px 'Comic Sans MS', 'Chalkboard SE', cursive";
+      ctx.fillText("(right-click)", 64, 105);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+    const postItG = new THREE.Group();
+    // Top-right corner of the bezel, clear of the mouse cable below. Low
+    // enough that the note's top edge sits on the bezel for the tape to grab.
+    postItG.position.set(2.26, 1.52, 0.36);
+    postItG.rotation.z = -0.07; // taped on in a hurry
+    monitor.add(postItG);
+    const postIt = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.9, 0.9),
+      new THREE.MeshLambertMaterial({ map: createPostItTexture() })
+    );
+    postItG.add(postIt);
+    const tape = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.38, 0.15),
+      new THREE.MeshLambertMaterial({ color: 0xfffdf2, transparent: true, opacity: 0.55 })
+    );
+    tape.position.set(0, 0.43, 0.005); // straddles the note's top edge onto the bezel
+    tape.rotation.z = 0.12;
+    postItG.add(tape);
+
+    // ─── Lean-in camera — straight-on, screen fills the viewport ─
+    monitor.updateMatrixWorld(true);
+    const CAM_BASE_POS = camera.position.clone();
+    const CAM_BASE_LOOK = new THREE.Vector3(0, 0.35, 0); // matches the init lookAt
+    const leanLookAt = new THREE.Vector3(0, 0, 0.04).applyMatrix4(monitor.matrixWorld);
+    const leanCamPos = leanLookAt.clone().add(
+      new THREE.Vector3(0, 0, 1).transformDirection(monitor.matrixWorld).multiplyScalar(4.2)
+    );
+    const camLook = new THREE.Vector3();
+
+    // Leaning in accelerates (slow shoulders-first start, ease-in power);
+    // leaning back out is a quick push-off (fast ease-out).
+    let leanOn = false;
+    let leanT = 0; // linear param; eased into a blend each frame
+    const LEAN_IN_DUR = 1.4, LEAN_OUT_DUR = 0.45, LEAN_EXP = 2.6;
+    const leanBlendOf = () =>
+      leanOn ? Math.pow(leanT, LEAN_EXP) : 1 - Math.pow(1 - leanT, 3);
+    let lastLeanToggle = 0;
+    function toggleLean() {
+      // Debounce duplicate events from synthetic input pipelines
+      const nowMs = performance.now();
+      if (nowMs - lastLeanToggle < 250) return;
+      lastLeanToggle = nowMs;
+      const blend = leanBlendOf();
+      leanOn = !leanOn;
+      // Re-seat the linear param so the eased position stays continuous when
+      // toggling mid-animation
+      leanT = leanOn ? Math.pow(blend, 1 / LEAN_EXP) : 1 - Math.pow(1 - blend, 1 / 3);
+    }
 
     // ─── Sphere pipeline (ported from the agent-sphere POC) ──
     const RT_W = 1280, RT_H = 960;
@@ -580,10 +760,13 @@ export default function Scene3D() {
     // shader (custom ShaderMaterials skip the renderer's output encoding) so
     // the POC's display colors reach the canvas exactly — a MeshBasicMaterial
     // would re-encode the dark background into washed-out grey.
+    // Slight pixelation: both screen layers snap their UVs to a coarse grid,
+    // like the tube can't quite resolve the framebuffer.
+    const PIX_GRID = new THREE.Vector2(640, 480);
     const screenPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(OPEN_W, OPEN_H),
       new THREE.ShaderMaterial({
-        uniforms: { uMap: { value: screenRT.texture } },
+        uniforms: { uMap: { value: screenRT.texture }, uPix: { value: PIX_GRID } },
         vertexShader: `
           varying vec2 vUv;
           void main() {
@@ -593,9 +776,11 @@ export default function Scene3D() {
         `,
         fragmentShader: `
           uniform sampler2D uMap;
+          uniform vec2 uPix;
           varying vec2 vUv;
           void main() {
-            gl_FragColor = vec4(texture2D(uMap, vUv).rgb, 1.0);
+            vec2 puv = (floor(vUv * uPix) + 0.5) / uPix;
+            gl_FragColor = vec4(texture2D(uMap, puv).rgb, 1.0);
           }
         `,
       })
@@ -610,10 +795,33 @@ export default function Scene3D() {
     hudCanvas.height = HUD_H;
     const hud = hudCanvas.getContext("2d")!;
     const hudTexture = new THREE.CanvasTexture(hudCanvas);
-    hudTexture.colorSpace = THREE.SRGBColorSpace;
+    // No color-space tag: the HUD shader below skips the renderer's output
+    // encoding, so decoding sRGB on sample would darken the whole screen.
+    // Raw in, raw out keeps the canvas colors exact.
     const hudPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(OPEN_W, OPEN_H),
-      new THREE.MeshBasicMaterial({ map: hudTexture, transparent: true })
+      // Same UV-snap pixelation as the screen layer, but alpha-aware so the
+      // HUD keeps compositing over the particles
+      new THREE.ShaderMaterial({
+        uniforms: { uMap: { value: hudTexture }, uPix: { value: PIX_GRID } },
+        transparent: true,
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform sampler2D uMap;
+          uniform vec2 uPix;
+          varying vec2 vUv;
+          void main() {
+            vec2 puv = (floor(vUv * uPix) + 0.5) / uPix;
+            gl_FragColor = texture2D(uMap, puv);
+          }
+        `,
+      })
     );
     hudPlane.position.z = 0.055;
     monitor.add(hudPlane);
@@ -621,82 +829,111 @@ export default function Scene3D() {
     // Digit-face shapes for the terminal avatar — drawn as canvas strokes,
     // sampled into particle targets so the face gets the same 3D ascii-digit
     // treatment as the word morphs. Box head, not circular.
-    const faceCache: Record<string, [number, number][]> = {};
-    function sampleFace(expr: string, open: boolean) {
-      const key = `${expr}|${open ? 1 : 0}`;
-      if (faceCache[key]) return faceCache[key];
+    // Face parts are sampled separately (box / eyes / mouth) and each owns a
+    // fixed particle index range — an expression swap or mouth flap only
+    // re-targets the particles of the part that actually changed. Sampling
+    // the whole face as one list reshuffled every particle on any change
+    // (different point counts shift the i % pts.length mapping), which made
+    // the entire face churn while a reply was typing.
+    const partCache: Record<string, [number, number][]> = {};
+    function samplePart(key: string, draw: (ctx: CanvasRenderingContext2D) => void) {
+      if (partCache[key]) return partCache[key];
       const S = 320;
       const c = document.createElement("canvas");
       c.width = S; c.height = S;
       const ctx = c.getContext("2d")!;
       ctx.fillStyle = "#fff";
       ctx.strokeStyle = "#fff";
-      // Box head
-      ctx.lineWidth = 13;
-      ctx.strokeRect(34, 34, 252, 252);
-      // Eyes
-      if (expr === "laugh") {
-        ctx.lineWidth = 11;
-        ctx.beginPath(); ctx.arc(110, 140, 22, Math.PI, 2 * Math.PI); ctx.stroke();
-        ctx.beginPath(); ctx.arc(210, 140, 22, Math.PI, 2 * Math.PI); ctx.stroke();
-      } else if (expr === "surprised") {
-        ctx.beginPath(); ctx.arc(110, 128, 24, 0, 2 * Math.PI); ctx.fill();
-        ctx.beginPath(); ctx.arc(210, 128, 24, 0, 2 * Math.PI); ctx.fill();
-      } else if (expr === "confused") {
-        ctx.lineWidth = 11;
-        ctx.beginPath(); ctx.arc(110, 128, 26, 0, 2 * Math.PI); ctx.stroke();
-        ctx.fillRect(198, 116, 26, 30);
-      } else if (expr === "sad") {
-        ctx.fillRect(92, 122, 36, 40);
-        ctx.fillRect(192, 122, 36, 40);
-      } else {
-        ctx.fillRect(92, 110, 36, 42);
-        ctx.fillRect(192, 110, 36, 42);
-      }
-      // Mouth
-      ctx.lineWidth = 12;
-      if (expr === "smile") {
-        ctx.beginPath(); ctx.arc(160, 192, 52, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
-      } else if (expr === "sad") {
-        ctx.beginPath(); ctx.arc(160, 254, 52, 1.15 * Math.PI, 1.85 * Math.PI); ctx.stroke();
-      } else if (expr === "laugh") {
-        ctx.beginPath(); ctx.arc(160, 198, 46, 0, Math.PI); ctx.closePath(); ctx.fill();
-      } else if (expr === "surprised") {
-        ctx.beginPath(); ctx.arc(160, 226, 28, 0, 2 * Math.PI); ctx.stroke();
-      } else if (expr === "confused") {
-        ctx.lineWidth = 11;
-        ctx.beginPath();
-        ctx.moveTo(112, 230); ctx.lineTo(140, 214); ctx.lineTo(168, 232); ctx.lineTo(198, 216);
-        ctx.stroke();
-      } else if (open) {
-        ctx.fillRect(110, 202, 100, 14);
-        ctx.fillRect(110, 236, 100, 14);
-      } else {
-        ctx.fillRect(110, 216, 100, 16);
-      }
+      draw(ctx);
       const img = ctx.getImageData(0, 0, S, S).data;
       const pts: [number, number][] = [];
       for (let y = 0; y < S; y += 2)
         for (let x = 0; x < S; x += 2)
           if (img[(y * S + x) * 4 + 3] > 128)
             pts.push([(x / S - 0.5) * 1.7, (0.5 - y / S) * 1.7]);
-      faceCache[key] = pts;
+      partCache[key] = pts;
       return pts;
+    }
+    function faceParts(expr: string, open: boolean) {
+      const head = samplePart("head", (ctx) => {
+        ctx.lineWidth = 13;
+        ctx.strokeRect(34, 34, 252, 252);
+      });
+      const eyeKey = expr === "laugh" || expr === "surprised" || expr === "confused" || expr === "sad"
+        ? expr : "neutral"; // smile shares the neutral eyes
+      const eyes = samplePart(`eyes|${eyeKey}`, (ctx) => {
+        if (eyeKey === "laugh") {
+          ctx.lineWidth = 11;
+          ctx.beginPath(); ctx.arc(110, 140, 22, Math.PI, 2 * Math.PI); ctx.stroke();
+          ctx.beginPath(); ctx.arc(210, 140, 22, Math.PI, 2 * Math.PI); ctx.stroke();
+        } else if (eyeKey === "surprised") {
+          ctx.beginPath(); ctx.arc(110, 128, 24, 0, 2 * Math.PI); ctx.fill();
+          ctx.beginPath(); ctx.arc(210, 128, 24, 0, 2 * Math.PI); ctx.fill();
+        } else if (eyeKey === "confused") {
+          ctx.lineWidth = 11;
+          ctx.beginPath(); ctx.arc(110, 128, 26, 0, 2 * Math.PI); ctx.stroke();
+          ctx.fillRect(198, 116, 26, 30);
+        } else if (eyeKey === "sad") {
+          ctx.fillRect(92, 122, 36, 40);
+          ctx.fillRect(192, 122, 36, 40);
+        } else {
+          ctx.fillRect(92, 110, 36, 42);
+          ctx.fillRect(192, 110, 36, 42);
+        }
+      });
+      const mouthKey = expr === "smile" || expr === "sad" || expr === "laugh" || expr === "surprised" || expr === "confused"
+        ? expr : `neutral|${open ? 1 : 0}`;
+      const mouth = samplePart(`mouth|${mouthKey}`, (ctx) => {
+        ctx.lineWidth = 12;
+        if (expr === "smile") {
+          ctx.beginPath(); ctx.arc(160, 192, 52, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+        } else if (expr === "sad") {
+          ctx.beginPath(); ctx.arc(160, 254, 52, 1.15 * Math.PI, 1.85 * Math.PI); ctx.stroke();
+        } else if (expr === "laugh") {
+          ctx.beginPath(); ctx.arc(160, 198, 46, 0, Math.PI); ctx.closePath(); ctx.fill();
+        } else if (expr === "surprised") {
+          ctx.beginPath(); ctx.arc(160, 226, 28, 0, 2 * Math.PI); ctx.stroke();
+        } else if (expr === "confused") {
+          ctx.lineWidth = 11;
+          ctx.beginPath();
+          ctx.moveTo(112, 230); ctx.lineTo(140, 214); ctx.lineTo(168, 232); ctx.lineTo(198, 216);
+          ctx.stroke();
+        } else if (open) {
+          ctx.fillRect(110, 202, 100, 14);
+          ctx.fillRect(110, 236, 100, 14);
+        } else {
+          ctx.fillRect(110, 216, 100, 16);
+        }
+      });
+      return { head, eyes, mouth };
     }
 
     let mode: SphereMode = "lattice";
     function computeTargets() {
+      const parts = mode === "terminal" ? faceParts(faceExpr, faceFlap) : null;
+      // Particle budgets track each part's point count so density — and with
+      // it the digit brightness — stays uniform across the face. The head
+      // budget is constant (its point count never changes), so head particles
+      // keep their targets through every expression/flap; only the small
+      // eyes/mouth boundary sliver ever hops parts.
+      const headN = parts ? Math.round(parts.head.length * 1.21) : 0;
+      const eyesN = parts
+        ? Math.round((COUNT - headN) * parts.eyes.length / (parts.eyes.length + parts.mouth.length))
+        : 0;
       for (let i = 0; i < COUNT; i++) {
         const ox = originals[i * 3], oy = originals[i * 3 + 1], oz = originals[i * 3 + 2];
         let tx: number, ty: number, tz: number;
-        if (mode === "lattice") {
+        if (!parts) {
           const s = 0.28;
           tx = Math.round(ox * 1.3 / s) * s;
           ty = Math.round(oy * 1.3 / s) * s;
           tz = Math.round(oz * 1.3 / s) * s;
         } else {
-          const pts = sampleFace(faceExpr, faceFlap);
-          const p = pts[i % pts.length];
+          const p = i < headN
+            ? parts.head[i % parts.head.length]
+            : i < headN + eyesN
+              ? parts.eyes[(i - headN) % parts.eyes.length]
+              : parts.mouth[(i - headN - eyesN) % parts.mouth.length];
           tx = p[0] - 1.45 + (randoms[i] - 0.5) * 0.02;
           ty = p[1] + 0.1 + ((randoms[i] * 7.31) % 1 - 0.5) * 0.02;
           tz = (((randoms[i] * 13.7) % 1) - 0.5) * 0.3;
@@ -711,7 +948,13 @@ export default function Scene3D() {
       mode = m;
       computeTargets();
       if (m === "terminal") {
-        // Gentle snap into the face — no explosion, just the quick re-piece
+        // Snap-cut into the face: park the object transform at screen centre
+        // immediately — otherwise the orb glides in from its orbit position,
+        // un-rotating and re-scaling on the way (the "swing"). The quick
+        // particle re-piece (phase 2) carries the whole transition instead.
+        points.position.set(0, 0, 0);
+        points.rotation.set(0, 0, 0);
+        points.scale.setScalar(1);
         phase = 2;
         phaseStart = performance.now() / 1000;
       } else phase = 0; // lattice settles normally
@@ -724,7 +967,12 @@ export default function Scene3D() {
     scene.add(keyboard);
 
     const KB_W = 4.6, KB_D = 1.85;
-    const kbBase = box(KB_W, 0.18, KB_D);
+    // Top face paints from keyboard-top.png (image top = far edge)
+    const kbBase = new THREE.Mesh(
+      new THREE.BoxGeometry(KB_W, 0.18, KB_D),
+      faceMats(2, paintedMat("/textures/keyboard-top.png", CREAM), matCream)
+    );
+    addEdges(kbBase);
     keyboard.add(kbBase);
 
     const keyMeshes = new Map<string, { mesh: THREE.Mesh; baseY: number }>();
@@ -757,7 +1005,12 @@ export default function Scene3D() {
     // ─── Mouse mesh ──────────────────────────────────────────
     const mouse3d = new THREE.Group();
     scene.add(mouse3d);
-    const mouseBody = box(0.72, 0.26, 1.08);
+    // Top face paints from mouse-top.png (image top = far edge, where the buttons sit)
+    const mouseBody = new THREE.Mesh(
+      new THREE.BoxGeometry(0.72, 0.26, 1.08),
+      faceMats(2, paintedMat("/textures/mouse-top.png", CREAM), matCream)
+    );
+    addEdges(mouseBody);
     mouseBody.position.y = 0.13;
     mouse3d.add(mouseBody);
     const btnL = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.07, 0.44), matCream);
@@ -778,7 +1031,11 @@ export default function Scene3D() {
     scene.add(radio);
 
     const matRadio = new THREE.MeshLambertMaterial({ color: 0xb2b4b4 });
-    const radioBody = new THREE.Mesh(new THREE.BoxGeometry(1.25, 1.85, 0.95), matRadio);
+    // Front face paints from radio-front.png
+    const radioBody = new THREE.Mesh(
+      new THREE.BoxGeometry(1.25, 1.85, 0.95),
+      faceMats(4, paintedMat("/textures/radio-front.png", 0xb2b4b4), matRadio)
+    );
     addEdges(radioBody);
     radioBody.position.y = 0.925;
     radio.add(radioBody);
@@ -1062,15 +1319,20 @@ export default function Scene3D() {
       ctx.strokeRect(2, 2, 252, 144);
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
+      const last = integrations.hevy?.lastWorkout;
+      const days = last?.date
+        ? Math.max(0, Math.floor((Date.now() - new Date(last.date).getTime()) / 86400000))
+        : null;
       ctx.fillStyle = S_ACCENT;
-      ctx.font = "700 64px ui-monospace, Menlo, monospace";
-      ctx.fillText(String(integrations.hevy?.streakWeeks ?? 0), 128, 62);
+      ctx.font = "700 56px ui-monospace, Menlo, monospace";
+      ctx.fillText(days === null ? "—" : String(days), 128, 52);
       ctx.fillStyle = S_INK;
-      ctx.font = "600 22px ui-monospace, Menlo, monospace";
-      ctx.fillText("WK STREAK", 128, 112);
+      ctx.font = "600 19px ui-monospace, Menlo, monospace";
+      ctx.fillText(days === 1 ? "DAY SINCE" : "DAYS SINCE", 128, 95);
+      ctx.fillText("LAST WORKOUT", 128, 117);
       ctx.fillStyle = S_DIM;
-      ctx.font = "500 13px ui-monospace, Menlo, monospace";
-      ctx.fillText("· hevy ·", 128, 134);
+      ctx.font = "500 12px ui-monospace, Menlo, monospace";
+      ctx.fillText("· hevy ·", 128, 137);
       streakTex.needsUpdate = true;
     }
     paintStreak();
@@ -1083,18 +1345,26 @@ export default function Scene3D() {
     streakBody.position.y = 0.295;
     streakBody.rotation.x = -0.09; // leaned back a touch
     streakG.add(streakBody);
-    // Mini dumbbell beside the counter
+    // Mini dumbbell on the counter's open left side — angled so both plates
+    // read from the camera (its old spot wedged it behind the counter and
+    // into the keyboard, leaving a bare hammer-looking bar).
     const matIron = new THREE.MeshLambertMaterial({ color: 0x4a4a50 });
-    const dbBar = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.05, 0.05), matIron);
+    const dbG = new THREE.Group();
+    dbG.position.set(-0.82, 0, 0.32);
+    dbG.rotation.y = 0.5;
+    streakG.add(dbG);
+    const dbBar = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.055, 0.055), matIron);
     addEdges(dbBar);
-    dbBar.position.set(0.78, 0.09, 0.12);
-    const dbL = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.19, 0.19), matIron);
-    addEdges(dbL);
-    dbL.position.set(0.57, 0.1, 0.12);
-    const dbR = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.19, 0.19), matIron);
-    addEdges(dbR);
-    dbR.position.set(0.99, 0.1, 0.12);
-    streakG.add(dbBar, dbL, dbR);
+    dbBar.position.y = 0.115;
+    dbG.add(dbBar);
+    const plateGeo = new THREE.CylinderGeometry(0.115, 0.115, 0.09, 8);
+    for (const side of [-1, 1]) {
+      const plate = new THREE.Mesh(plateGeo, matIron);
+      plate.rotation.z = Math.PI / 2;
+      plate.position.set(side * 0.235, 0.115, 0);
+      addEdges(plate);
+      dbG.add(plate);
+    }
 
     // Live data swap-in
     fetch("/api/integrations")
@@ -1326,7 +1596,12 @@ export default function Scene3D() {
     }
     function onMouseDown(e: MouseEvent) {
       if (e.button === 0) buttons.left = true;
-      if (e.button === 2) buttons.right = true;
+      if (e.button === 2) {
+        buttons.right = true;
+        // Right-click anywhere toggles the lean (mousedown fires exactly once
+        // per press; contextmenu can double-fire in some environments)
+        toggleLean();
+      }
     }
     function onMouseUp(e: MouseEvent) {
       if (e.button === 0) buttons.left = false;
@@ -1374,19 +1649,28 @@ export default function Scene3D() {
     const MONO = "ui-monospace, Menlo, monospace";
     const MARKER = "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive";
 
+    // Blocky LamOS wordmark — drawn tiny, upscaled nearest-neighbor so the
+    // letters land as fat pixels
+    const bootWordC = document.createElement("canvas");
+    bootWordC.width = 160; bootWordC.height = 40;
+    {
+      const bctx = bootWordC.getContext("2d")!;
+      bctx.fillStyle = "#ffffff";
+      bctx.textAlign = "center";
+      bctx.textBaseline = "middle";
+      bctx.font = "700 26px 'Courier New', ui-monospace, monospace";
+      bctx.fillText("LamOS", 76, 22);
+      bctx.font = "700 9px 'Courier New', ui-monospace, monospace";
+      bctx.fillText("TM", 136, 8);
+    }
+
     function drawBoot(now: number) {
       hud.fillStyle = "#000000";
       hud.fillRect(0, 0, HUD_W, HUD_H);
       hud.textBaseline = "middle";
-      // Hand-drawn LamOS wordmark — white outline only, like the sketch
-      hud.textAlign = "center";
-      hud.strokeStyle = "#ffffff";
-      hud.lineWidth = 3.5;
-      hud.font = `italic 900 130px ${MARKER}`;
-      hud.strokeText("LamOS", HUD_W / 2 - 20, 300);
-      hud.lineWidth = 2;
-      hud.font = `700 30px ${MARKER}`;
-      hud.strokeText("TM", HUD_W / 2 + 250, 224);
+      hud.imageSmoothingEnabled = false;
+      hud.drawImage(bootWordC, (HUD_W - 160 * 6) / 2, 178, 160 * 6, 240);
+      hud.imageSmoothingEnabled = true;
       // Segmented win9x-style progress pill
       const progress = Math.min(1, (now - bootStart) / bootDur);
       const pw = 400, ph = 62, bx = (HUD_W - pw) / 2, by = 440, r = ph / 2;
@@ -1590,60 +1874,76 @@ export default function Scene3D() {
       hud.textAlign = "left";
       hud.font = `500 17px ${MONO}`;
       hud.fillStyle = S_DIM;
-      hud.fillText("C:\\adrian\\resume.doc — [ filler resume, swap in the real one ]", 84, y); y += 42;
+      hud.fillText("C:\\adrian\\resume.doc", 84, y); y += 42;
 
-      const jobs = [
-        {
-          role: "Software Engineer", co: "[Company Name]", when: "2024 — now",
-          pts: [
-            "shipped [big feature] used by [impressive number] of people",
-            "wrangled [distributed system] until it stopped catching fire",
-            "wrote docs nobody read, then rewrote them as memes",
-          ],
-        },
-        {
-          role: "Software Engineer", co: "[Previous Co]", when: "2022 — 2024",
-          pts: [
-            "built [internal tool] that saved the team [n] hours a week",
-            "survived [framework migration] with most of my sanity",
-          ],
-        },
-        {
-          role: "SWE Intern", co: "[Scrappy Startup]", when: "summer 2021",
-          pts: [
-            "touched prod on day two (it was fine) (it was mostly fine)",
-            "learned more from the outage than from the onboarding",
-          ],
-        },
-      ];
-      for (const job of jobs) {
-        const h = 52 + job.pts.length * 27 + 12;
+      function drawCard(role: string, co: string, when: string, pts: string[]) {
+        const h = 52 + pts.length * 27 + 12;
         hud.strokeStyle = "#3a342a";
         hud.lineWidth = 2;
         hud.strokeRect(60, y, HUD_W - 120, h);
+        hud.textAlign = "left";
         hud.font = `700 23px ${MONO}`;
         hud.fillStyle = S_ACCENT;
-        hud.fillText(job.role, 84, y + 30);
-        const rw = hud.measureText(job.role).width;
+        hud.fillText(role, 84, y + 30);
+        const rw = hud.measureText(role).width;
         hud.font = `500 20px ${MONO}`;
         hud.fillStyle = S_INK;
-        hud.fillText(`@ ${job.co}`, 84 + rw + 14, y + 30);
+        hud.fillText(`@ ${co}`, 84 + rw + 14, y + 30);
         hud.textAlign = "right";
         hud.font = `500 17px ${MONO}`;
         hud.fillStyle = S_DIM;
-        hud.fillText(job.when, HUD_W - 84, y + 30);
+        hud.fillText(when, HUD_W - 84, y + 30);
         hud.textAlign = "left";
         hud.font = `500 19px ${MONO}`;
         hud.fillStyle = S_INK;
-        job.pts.forEach((p, i) => hud.fillText(`▸ ${p}`, 100, y + 62 + i * 27));
+        pts.forEach((p, i) => hud.fillText(`▸ ${p}`, 100, y + 62 + i * 27));
         y += h + 18;
       }
+
+      const jobs = [
+        {
+          role: "Data Scientist, Generative AI", co: "Asurion", when: "current",
+          pts: [
+            "built a multi-agent customer-support system on the Claude Agent SDK — subagent orchestrator + dynamic context injection",
+            "evaluated it turn-by-turn against the legacy system, winning a large majority of head-to-head comparisons",
+            "also shipped a 21-agent knowledge assistant, a vision-model eval harness, and a fine-tuned voice turn-detector",
+          ],
+        },
+        {
+          role: "ML Engineer Intern", co: "Asurion", when: "internship",
+          pts: [
+            "led a team of 4 building a GraphRAG pipeline for multi-step reasoning",
+            "built an AWS Lex/Connect voice chatbot",
+            "ran MLOps benchmarking with Docker + CI/CD",
+          ],
+        },
+        {
+          role: "Data Science Intern", co: "Towngas", when: "internship",
+          pts: [
+            "PySpark ETL over a large production database",
+            "built an XGBoost dispatch classifier",
+          ],
+        },
+      ];
+      for (const job of jobs) drawCard(job.role, job.co, job.when, job.pts);
+      y += 12;
+
+      y = sectionHeader(">> research", y);
+      drawCard(
+        "Research Assistant", "UCLA Sensing & Robotics for Infrastructure Lab", "",
+        [
+          "built a street-network graph weighted by betweenness centrality for LA's hillside-streets prioritization tool",
+          "combined it with 18 months of field condition survey data into a rankable, equity-aware capital-priority tool",
+          "recognized with an LA City Council commendation",
+        ],
+      );
       y += 12;
 
       y = sectionHeader(">> education", y);
       hud.font = `500 19px ${MONO}`;
       hud.fillStyle = S_INK;
-      hud.fillText("[University Name] — B.S. Computer Science, class of [year]", 104, y);
+      hud.fillText("University of San Francisco — M.S. Data Science", 104, y); y += 30;
+      hud.fillText("UCLA — B.S. Mathematics of Computation", 104, y);
       y += 48;
 
       // Skill bars fill up when the window opens — RPG stat-screen rules
@@ -1957,15 +2257,15 @@ export default function Scene3D() {
         drawTitleBar(WINDOW_TITLES[openPage], px, py);
       }
 
-      // Scanlines
-      hud.fillStyle = "rgba(0,0,0,0.16)";
+      // Scanlines — kept light so the screen stays readable
+      hud.fillStyle = "rgba(0,0,0,0.09)";
       for (let y = 0; y < HUD_H; y += 4) hud.fillRect(0, y, HUD_W, 1);
 
       // Vignette
       if (!vignette) {
         vignette = hud.createRadialGradient(HUD_W / 2, HUD_H / 2, HUD_H * 0.42, HUD_W / 2, HUD_H / 2, HUD_H * 0.85);
         vignette.addColorStop(0, "rgba(0,0,0,0)");
-        vignette.addColorStop(1, "rgba(0,0,0,0.55)");
+        vignette.addColorStop(1, "rgba(0,0,0,0.32)");
       }
       hud.fillStyle = vignette;
       hud.fillRect(0, 0, HUD_W, HUD_H);
@@ -1982,9 +2282,9 @@ export default function Scene3D() {
         const msg = `🎵 Now Playing - ${tr.name} — ${tr.artist}`;
         const tw = hud.measureText(msg).width;
         hud.fillStyle = "rgba(18,16,12,0.82)";
-        hud.fillRect(16, HUD_H - 60, tw + 30, 42);
+        hud.fillRect(HUD_W - tw - 46, 14, tw + 30, 42);
         hud.fillStyle = S_ACCENT;
-        hud.fillText(msg, 32, HUD_H - 38);
+        hud.fillText(msg, HUD_W - tw - 30, 36);
       }
 
       // Cursor arrow — only while the pointer is actually on the screen;
@@ -2016,24 +2316,56 @@ export default function Scene3D() {
     const ORBIT = { r: 0.85, tilt: 0.4, w: 0.5 };
     const ballPos = new THREE.Vector3();
     const t0 = performance.now();
+    let lastFrameT = t0;
     let raf = 0;
 
     function animate() {
       raf = requestAnimationFrame(animate);
       const now = performance.now();
       const t = (now - t0) / 1000;
+      const dt = Math.min(0.05, (now - lastFrameT) / 1000);
+      lastFrameT = now;
+
+      // ── Window walker — rolled once, 5s in ──
+      if (!walkerRolled && now - t0 > WALKER_DELAY) {
+        walkerRolled = true;
+        if (Math.random() < WALKER_CHANCE) {
+          walkerActive = true;
+          walkerStart = now;
+          walkerDir = Math.random() < 0.5 ? 1 : -1;
+        }
+      }
+      if (walkerActive) {
+        const age = now - walkerStart;
+        paintSky(skyCtx, 512, 384);
+        if (age > WALKER_DURATION) walkerActive = false;
+        else drawWalker(skyCtx, 512, 384, age / WALKER_DURATION, walkerDir);
+        skyTexture.needsUpdate = true;
+      }
+
+      // ── Lean-in camera blend ──
+      if (leanOn) leanT = Math.min(1, leanT + dt / LEAN_IN_DUR);
+      else leanT = Math.max(0, leanT - dt / LEAN_OUT_DUR);
+      const leanBlend = leanBlendOf();
+      camera.position.lerpVectors(CAM_BASE_POS, leanCamPos, leanBlend);
+      camLook.lerpVectors(CAM_BASE_LOOK, leanLookAt, leanBlend);
+      camera.lookAt(camLook);
 
       // ── Sphere physics ──
       sphereMouseTarget.set((crt.cx / 50 - 1) * 3, (1 - crt.cy / 50) * 2, 1);
       sphereMouse.lerp(sphereMouseTarget, 0.08);
 
       const nowS = now / 1000;
-      let attract = 0.03, damp = 0.88, teleport = false;
+      // The face runs a stiffer, heavier-damped spring than the idle lattice
+      // orb so expression swaps land snappily instead of bouncing.
+      let attract = mode === "terminal" ? 0.055 : 0.03;
+      let damp = mode === "terminal" ? 0.8 : 0.88;
+      let teleport = false;
       if (phase === 2) {
-        attract = 0.06;
-        damp = 0.78;
+        attract = 0.1;
+        damp = 0.7;
         teleport = true;
-        if (nowS - phaseStart > 0.5) phase = 0;
+        if (nowS - phaseStart > 0.35) phase = 0;
       }
 
       for (let i = 0; i < COUNT; i++) {
@@ -2047,7 +2379,7 @@ export default function Scene3D() {
         const tty = ty + dy * infl;
         const ttz = tz + dz * infl * 0.3;
 
-        if (teleport && Math.random() < 0.07) {
+        if (teleport && Math.random() < 0.12) {
           positions[i * 3] = ttx; positions[i * 3 + 1] = tty; positions[i * 3 + 2] = ttz;
           velocities[i * 3] = 0; velocities[i * 3 + 1] = 0; velocities[i * 3 + 2] = 0;
           continue;
