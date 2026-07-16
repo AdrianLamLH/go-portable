@@ -17,6 +17,10 @@ function figmaAssetResolver() {
 }
 
 export default defineConfig({
+  server: {
+    // Local dev: `npm run server` hosts the API on :3001; Vite proxies /api to it.
+    proxy: { '/api': 'http://localhost:3001' },
+  },
   plugins: [
     figmaAssetResolver(),
     // The React and Tailwind plugins are both required for Make, even if

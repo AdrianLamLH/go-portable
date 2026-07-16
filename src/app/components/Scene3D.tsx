@@ -6,19 +6,25 @@ import * as THREE from "three";
 // The agent-sphere POC renders into a texture mapped onto the monitor's
 // screen face; tabs + cursor + scanlines composite on a HUD canvas texture.
 
-type SphereMode = "lattice" | "about" | "work" | "projects";
-type NavId = "about" | "work" | "projects";
+type SphereMode = "lattice" | "about" | "work" | "projects" | "terminal";
+type NavId = "about" | "work" | "projects" | "terminal";
+type WordMode = "about" | "work" | "projects";
 
-const WORD_TEXT: Record<NavId, string> = {
+const WORD_TEXT: Record<WordMode, string> = {
   work: "WORK",
   projects: "PROJECTS",
   about: "ABOUT ME",
 };
 
+function isWordMode(m: SphereMode): m is WordMode {
+  return m === "about" || m === "work" || m === "projects";
+}
+
 const NAV_TABS: { id: NavId; label: string }[] = [
   { id: "about", label: "About me" },
   { id: "work", label: "Work Experiences" },
   { id: "projects", label: "Personal Projects" },
+  { id: "terminal", label: "Terminal" },
 ];
 
 // Screen palette — the POC's locked tokens
@@ -32,7 +38,6 @@ const S_BG = "#12100c";
 const CREAM = 0xf4eede;
 const CREAM_DARK = 0xc9c0a6;
 const OUTLINE = 0x241a0a;
-const DESK = 0x17110a;
 
 type KeySpec = { code: string; w?: number };
 
@@ -85,20 +90,39 @@ export default function Scene3D() {
     camera.position.set(0, 2.3, 10.8);
     camera.lookAt(0, 0.35, 0);
 
-    scene.add(new THREE.HemisphereLight(0xfff6e0, 0x2c2318, 1.15));
-    const dir = new THREE.DirectionalLight(0xfff2d8, 0.85);
-    dir.position.set(4, 7, 6);
+    // ─── Lighting — soft-shadowed key light + ambient fill ───
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    scene.add(new THREE.HemisphereLight(0xfff6e0, 0x2c2318, 0.85));
+    // Sunlight angling in from the window on the right
+    const dir = new THREE.DirectionalLight(0xffeecf, 1.05);
+    dir.position.set(7, 8, 5);
+    dir.castShadow = true;
+    dir.shadow.mapSize.set(2048, 2048);
+    dir.shadow.camera.left = -12;
+    dir.shadow.camera.right = 12;
+    dir.shadow.camera.top = 12;
+    dir.shadow.camera.bottom = -6;
+    dir.shadow.camera.near = 1;
+    dir.shadow.camera.far = 40;
+    dir.shadow.bias = -0.0005;
     scene.add(dir);
+    // Amber spill from the CRT onto the desk and keyboard (off with the screen)
+    const crtGlow = new THREE.PointLight(0xe8c547, 0.55, 9, 2);
+    crtGlow.position.set(0, 1.2, 1.6);
+    scene.add(crtGlow);
 
     // ─── Shared materials / helpers ──────────────────────────
     const matCream = new THREE.MeshLambertMaterial({ color: CREAM });
     const matCreamDark = new THREE.MeshLambertMaterial({ color: CREAM_DARK });
-    const matDesk = new THREE.MeshLambertMaterial({ color: DESK });
     const edgeMat = new THREE.LineBasicMaterial({ color: OUTLINE });
 
     function addEdges(mesh: THREE.Mesh) {
       const edges = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry as THREE.BufferGeometry), edgeMat);
       mesh.add(edges);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
     }
     function box(w: number, h: number, d: number, mat: THREE.Material = matCream) {
       const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
@@ -106,11 +130,233 @@ export default function Scene3D() {
       return m;
     }
 
-    // ─── Desk ────────────────────────────────────────────────
+    // ─── Wooden desk ─────────────────────────────────────────
     const DESK_Y = -1.45; // desk top
-    const desk = new THREE.Mesh(new THREE.BoxGeometry(40, 0.3, 20), matDesk);
-    desk.position.set(0, DESK_Y - 0.15, 2);
+    function createWoodTexture() {
+      const c = document.createElement("canvas");
+      c.width = 512; c.height = 512;
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "#7a5230";
+      ctx.fillRect(0, 0, 512, 512);
+      // Grain streaks — wavy horizontal strands in darker/lighter browns
+      for (let i = 0; i < 90; i++) {
+        const y = Math.random() * 512;
+        const dark = Math.random() > 0.5;
+        ctx.strokeStyle = dark
+          ? `rgba(52, 33, 16, ${0.08 + Math.random() * 0.22})`
+          : `rgba(178, 128, 82, ${0.05 + Math.random() * 0.15})`;
+        ctx.lineWidth = 1 + Math.random() * 2.5;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        for (let x = 0; x <= 512; x += 64) {
+          ctx.lineTo(x, y + Math.sin(x * 0.02 + i) * 4 + (Math.random() - 0.5) * 6);
+        }
+        ctx.stroke();
+      }
+      // Plank seams
+      ctx.strokeStyle = "rgba(40, 24, 10, 0.5)";
+      ctx.lineWidth = 3;
+      for (let i = 1; i < 4; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, i * 128);
+        ctx.lineTo(512, i * 128);
+        ctx.stroke();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(3, 2);
+      return tex;
+    }
+    const matWood = new THREE.MeshLambertMaterial({ map: createWoodTexture() });
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(40, 0.3, 15), matWood);
+    desk.position.set(0, DESK_Y - 0.15, 3.2);
+    desk.receiveShadow = true;
     scene.add(desk);
+
+    // ─── Wall — single-color light cream ─────────────────────
+    const wall = new THREE.Mesh(
+      new THREE.BoxGeometry(40, 24, 0.5),
+      new THREE.MeshLambertMaterial({ color: 0xe9e0c8 })
+    );
+    wall.position.set(0, 8, -4.5);
+    wall.receiveShadow = true;
+    scene.add(wall);
+
+    // ─── Window — white frame, half open, behind the computer ─
+    // Sky repaints with New York's time of day.
+    const windowGroup = new THREE.Group();
+    windowGroup.position.set(5.3, 3.6, -4.3);
+    scene.add(windowGroup);
+
+    const WIN_W = 4.4, WIN_H = 3.3;
+    const matWhite = new THREE.MeshLambertMaterial({ color: 0xf7f4ec });
+
+    function paintSky(ctx: CanvasRenderingContext2D, W: number, H: number) {
+      // New York local hour (fractional)
+      const nyParts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York", hour12: false,
+        hour: "numeric", minute: "numeric",
+      }).formatToParts(new Date());
+      const h = Number(nyParts.find(p => p.type === "hour")?.value ?? 12) % 24;
+      const m = Number(nyParts.find(p => p.type === "minute")?.value ?? 0);
+      const hour = h + m / 60;
+
+      // Clean gradient sky — no cloud sprites (they rendered badly)
+      let top: string, bottom: string;
+      if (hour >= 6 && hour < 8)       { top = "#7f9cc9"; bottom = "#f2b27a"; } // dawn
+      else if (hour >= 8 && hour < 17) { top = "#4d8ad2"; bottom = "#a9cdf2"; } // day
+      else if (hour >= 17 && hour < 20){ top = "#45528c"; bottom = "#e8875c"; } // dusk
+      else                             { top = "#0c142c"; bottom = "#233458"; } // night
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, top);
+      grad.addColorStop(1, bottom);
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+      // Stars at night
+      if (hour >= 20 || hour < 6) {
+        ctx.fillStyle = "rgba(240, 244, 255, 0.9)";
+        for (let i = 0; i < 40; i++) {
+          ctx.fillRect(((i * 137) % W), ((i * 89) % (H * 0.7)), 1.6, 1.6);
+        }
+      }
+    }
+
+    const skyCanvas = document.createElement("canvas");
+    skyCanvas.width = 512; skyCanvas.height = 384;
+    const skyCtx = skyCanvas.getContext("2d")!;
+    paintSky(skyCtx, 512, 384);
+    const skyTexture = new THREE.CanvasTexture(skyCanvas);
+    skyTexture.colorSpace = THREE.SRGBColorSpace;
+    const skyInterval = setInterval(() => {
+      paintSky(skyCtx, 512, 384);
+      skyTexture.needsUpdate = true;
+    }, 60_000);
+
+    const skyPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(WIN_W, WIN_H),
+      new THREE.MeshBasicMaterial({ map: skyTexture })
+    );
+    // Clearly proud of the wall face — coplanar placement z-fought with the
+    // wall and striped the view.
+    skyPlane.position.z = 0.12;
+    windowGroup.add(skyPlane);
+
+    // Outer frame — chunky white casing
+    const FR = 0.46, FR_D = 0.24;
+    const frTop = box(WIN_W + FR * 2, FR, FR_D, matWhite);
+    frTop.position.set(0, WIN_H / 2 + FR / 2, 0.12);
+    const frBot = box(WIN_W + FR * 2, FR, FR_D, matWhite);
+    frBot.position.set(0, -(WIN_H / 2 + FR / 2), 0.12);
+    const frL = box(FR, WIN_H, FR_D, matWhite);
+    frL.position.set(-(WIN_W / 2 + FR / 2), 0, 0.12);
+    const frR = box(FR, WIN_H, FR_D, matWhite);
+    frR.position.set(WIN_W / 2 + FR / 2, 0, 0.12);
+    // Center rail + sill
+    const frMid = box(WIN_W, 0.24, FR_D, matWhite);
+    frMid.position.set(0, 0, 0.12);
+    const sill = box(WIN_W + FR * 3, 0.18, 0.55, matWhite);
+    sill.position.set(0, -(WIN_H / 2 + FR + 0.09), 0.26);
+    windowGroup.add(frTop, frBot, frL, frR, frMid, sill);
+
+    // Half-open bottom sash — slid up over the top half, so the lower half
+    // of the window is open air.
+    const sash = new THREE.Group();
+    sash.position.set(0, WIN_H / 4, 0.3); // raised to cover the upper half
+    const SA = 0.24;
+    const saTop = box(WIN_W + 0.1, SA, 0.12, matWhite);
+    saTop.position.y = WIN_H / 4 - SA / 2;
+    const saBot = box(WIN_W + 0.1, SA, 0.12, matWhite);
+    saBot.position.y = -(WIN_H / 4 - SA / 2);
+    const saL = box(SA, WIN_H / 2, 0.12, matWhite);
+    saL.position.x = -(WIN_W / 2 - SA / 2 + 0.05);
+    const saR = box(SA, WIN_H / 2, 0.12, matWhite);
+    saR.position.x = WIN_W / 2 - SA / 2 + 0.05;
+    const saMull = box(SA * 0.8, WIN_H / 2, 0.1, matWhite);
+    sash.add(saTop, saBot, saL, saR, saMull);
+    windowGroup.add(sash);
+
+    // ─── Poster on the wall, left of the monitor ─────────────
+    function createPosterTexture() {
+      const c = document.createElement("canvas");
+      c.width = 512; c.height = 768;
+      const ctx = c.getContext("2d")!;
+      // Paper + dark print
+      ctx.fillStyle = "#f2ecdc";
+      ctx.fillRect(0, 0, 512, 768);
+      ctx.fillStyle = "#12100c";
+      ctx.fillRect(22, 22, 468, 724);
+      // Star field
+      for (let i = 0; i < 130; i++) {
+        ctx.fillStyle = `rgba(237, 228, 211, ${0.25 + Math.random() * 0.6})`;
+        const s = Math.random() * 2.2 + 0.6;
+        ctx.fillRect(30 + Math.random() * 452, 30 + Math.random() * 560, s, s);
+      }
+      // Digit-orb: rings of glyphs, echoing the CRT sphere
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const cx = 256, cy = 300;
+      for (let ring = 0; ring < 6; ring++) {
+        const r = 34 + ring * 26;
+        const n = 8 + ring * 5;
+        ctx.font = `700 ${22 - ring * 2}px ui-monospace, Menlo, monospace`;
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2 + ring * 0.7;
+          const fade = 1 - ring / 7;
+          ctx.fillStyle = ring % 2 === 0
+            ? `rgba(232, 197, 71, ${0.85 * fade})`
+            : `rgba(237, 228, 211, ${0.7 * fade})`;
+          ctx.fillText(String((i * 7 + ring) % 10), cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.92);
+        }
+      }
+      // Title block
+      ctx.fillStyle = "#e8c547";
+      ctx.font = "900 64px 'Helvetica Neue', Arial, sans-serif";
+      ctx.fillText("APOLLO", 256, 618);
+      ctx.fillStyle = "#ede4d3";
+      ctx.font = "900 64px 'Helvetica Neue', Arial, sans-serif";
+      ctx.fillText("DRIFT", 256, 684);
+      ctx.fillStyle = "#857d6e";
+      ctx.font = "500 20px ui-monospace, Menlo, monospace";
+      ctx.fillText("· mission control radio ·", 256, 730);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+    const poster = new THREE.Mesh(
+      new THREE.PlaneGeometry(5.7, 8.55), // 3x the original print
+      new THREE.MeshLambertMaterial({ map: createPosterTexture() })
+    );
+    poster.position.set(-6.2, 3.4, -4.24);
+    poster.rotation.z = 0.015; // hung ever-so-slightly crooked
+    poster.receiveShadow = true; // fan shadow sweeps across the print, not behind it
+    scene.add(poster);
+
+    // ─── Ceiling fan — hangs out of frame, its shadow sweeps the desk ─
+    const fan = new THREE.Group();
+    fan.position.set(1.2, 7.6, 2.6); // nudged toward the key light
+    scene.add(fan);
+    const fanMat = new THREE.MeshLambertMaterial({ color: 0x6b5f4a });
+    const fanHub = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.3, 10), fanMat);
+    fanHub.castShadow = true;
+    fan.add(fanHub);
+    for (let i = 0; i < 4; i++) {
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.07, 0.8), fanMat);
+      blade.position.x = Math.cos((i / 4) * Math.PI * 2) * 2.4;
+      blade.position.z = Math.sin((i / 4) * Math.PI * 2) * 2.4;
+      blade.rotation.y = -(i / 4) * Math.PI * 2;
+      blade.castShadow = true;
+      fan.add(blade);
+    }
+
+    // ─── Mousepad ────────────────────────────────────────────
+    const mousepad = new THREE.Mesh(
+      new THREE.BoxGeometry(2.7, 0.03, 2.5),
+      new THREE.MeshLambertMaterial({ color: 0x24242a })
+    );
+    addEdges(mousepad);
+    mousepad.position.set(3.35, DESK_Y + 0.015, 2.8);
+    scene.add(mousepad);
 
     // ─── Monitor ─────────────────────────────────────────────
     const monitor = new THREE.Group();
@@ -141,6 +387,25 @@ export default function Scene3D() {
     const foot = box(2.3, 0.18, 1.5);
     foot.position.set(0, -OUTER_H / 2 - 0.68, -0.3);
     monitor.add(neck, foot);
+
+    // Power button — bottom-left of the bezel; toggles the screen
+    let screenOn = true;
+    const POWER_OUT = 0.41, POWER_IN = 0.36;
+    const powerButton = new THREE.Mesh(
+      new THREE.BoxGeometry(0.2, 0.2, 0.14), // small square
+      matCreamDark
+    );
+    addEdges(powerButton);
+    powerButton.position.set(-2.15, -(OPEN_H / 2 + barH / 2), POWER_OUT);
+    monitor.add(powerButton);
+
+    // Dark glass shown when the screen is off
+    const offPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(OPEN_W, OPEN_H),
+      new THREE.MeshBasicMaterial({ color: 0x0b0a08 })
+    );
+    offPlane.position.z = 0.03;
+    monitor.add(offPlane);
 
     // ─── Sphere pipeline (ported from the agent-sphere POC) ──
     const RT_W = 1280, RT_H = 960;
@@ -384,6 +649,72 @@ export default function Scene3D() {
       return pts;
     }
 
+    // Digit-face shapes for the terminal avatar — drawn as canvas strokes,
+    // sampled into particle targets so the face gets the same 3D ascii-digit
+    // treatment as the word morphs. Box head, not circular.
+    const faceCache: Record<string, [number, number][]> = {};
+    function sampleFace(expr: string, open: boolean) {
+      const key = `${expr}|${open ? 1 : 0}`;
+      if (faceCache[key]) return faceCache[key];
+      const S = 320;
+      const c = document.createElement("canvas");
+      c.width = S; c.height = S;
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "#fff";
+      ctx.strokeStyle = "#fff";
+      // Box head
+      ctx.lineWidth = 13;
+      ctx.strokeRect(34, 34, 252, 252);
+      // Eyes
+      if (expr === "laugh") {
+        ctx.lineWidth = 11;
+        ctx.beginPath(); ctx.arc(110, 140, 22, Math.PI, 2 * Math.PI); ctx.stroke();
+        ctx.beginPath(); ctx.arc(210, 140, 22, Math.PI, 2 * Math.PI); ctx.stroke();
+      } else if (expr === "surprised") {
+        ctx.beginPath(); ctx.arc(110, 128, 24, 0, 2 * Math.PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(210, 128, 24, 0, 2 * Math.PI); ctx.fill();
+      } else if (expr === "confused") {
+        ctx.lineWidth = 11;
+        ctx.beginPath(); ctx.arc(110, 128, 26, 0, 2 * Math.PI); ctx.stroke();
+        ctx.fillRect(198, 116, 26, 30);
+      } else if (expr === "sad") {
+        ctx.fillRect(92, 122, 36, 40);
+        ctx.fillRect(192, 122, 36, 40);
+      } else {
+        ctx.fillRect(92, 110, 36, 42);
+        ctx.fillRect(192, 110, 36, 42);
+      }
+      // Mouth
+      ctx.lineWidth = 12;
+      if (expr === "smile") {
+        ctx.beginPath(); ctx.arc(160, 192, 52, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+      } else if (expr === "sad") {
+        ctx.beginPath(); ctx.arc(160, 254, 52, 1.15 * Math.PI, 1.85 * Math.PI); ctx.stroke();
+      } else if (expr === "laugh") {
+        ctx.beginPath(); ctx.arc(160, 198, 46, 0, Math.PI); ctx.closePath(); ctx.fill();
+      } else if (expr === "surprised") {
+        ctx.beginPath(); ctx.arc(160, 226, 28, 0, 2 * Math.PI); ctx.stroke();
+      } else if (expr === "confused") {
+        ctx.lineWidth = 11;
+        ctx.beginPath();
+        ctx.moveTo(112, 230); ctx.lineTo(140, 214); ctx.lineTo(168, 232); ctx.lineTo(198, 216);
+        ctx.stroke();
+      } else if (open) {
+        ctx.fillRect(110, 202, 100, 14);
+        ctx.fillRect(110, 236, 100, 14);
+      } else {
+        ctx.fillRect(110, 216, 100, 16);
+      }
+      const img = ctx.getImageData(0, 0, S, S).data;
+      const pts: [number, number][] = [];
+      for (let y = 0; y < S; y += 2)
+        for (let x = 0; x < S; x += 2)
+          if (img[(y * S + x) * 4 + 3] > 128)
+            pts.push([(x / S - 0.5) * 1.7, (0.5 - y / S) * 1.7]);
+      faceCache[key] = pts;
+      return pts;
+    }
+
     let mode: SphereMode = "lattice";
     function computeTargets() {
       for (let i = 0; i < COUNT; i++) {
@@ -394,6 +725,12 @@ export default function Scene3D() {
           tx = Math.round(ox * 1.3 / s) * s;
           ty = Math.round(oy * 1.3 / s) * s;
           tz = Math.round(oz * 1.3 / s) * s;
+        } else if (mode === "terminal") {
+          const pts = sampleFace(faceExpr, faceFlap);
+          const p = pts[i % pts.length];
+          tx = p[0] - 1.45 + (randoms[i] - 0.5) * 0.02;
+          ty = p[1] + 0.1 + ((randoms[i] * 7.31) % 1 - 0.5) * 0.02;
+          tz = (((randoms[i] * 13.7) % 1) - 0.5) * 0.3;
         } else {
           const pts = sampleWord(WORD_TEXT[mode]);
           const p = pts[i % pts.length];
@@ -428,8 +765,12 @@ export default function Scene3D() {
       if (m === mode) return;
       mode = m;
       computeTargets();
-      if (m !== "lattice") startExplode();
-      else phase = 0;
+      if (isWordMode(m)) startExplode(); // shatter into the word
+      else if (m === "terminal") {
+        // Gentle snap into the face — no explosion, just the quick re-piece
+        phase = 2;
+        phaseStart = performance.now() / 1000;
+      } else phase = 0; // lattice settles normally
     }
 
     // ─── Keyboard mesh ───────────────────────────────────────
@@ -486,6 +827,415 @@ export default function Scene3D() {
     wheel.position.set(0, 0.3, -0.3);
     mouse3d.add(btnL, btnR, wheel);
 
+    // ─── Radio — grey box with a press-in play button ────────
+    const radio = new THREE.Group();
+    radio.position.set(4.6, DESK_Y, -1.1); // right side, behind the computer and mouse
+    radio.rotation.y = -0.5;               // angled toward the viewer
+    scene.add(radio);
+
+    const matRadio = new THREE.MeshLambertMaterial({ color: 0xb2b4b4 });
+    const radioBody = new THREE.Mesh(new THREE.BoxGeometry(1.25, 1.85, 0.95), matRadio);
+    addEdges(radioBody);
+    radioBody.position.y = 0.925;
+    radio.add(radioBody);
+
+    // Readout panel — shows "now playing" only while the radio plays
+    function createRadioFace(withText: boolean) {
+      const c = document.createElement("canvas");
+      c.width = 256; c.height = 128;
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "#0c0c0c";
+      ctx.fillRect(0, 0, 256, 128);
+      if (withText) {
+        ctx.fillStyle = "#f2f2f2";
+        ctx.font = "500 34px ui-monospace, Menlo, monospace";
+        ctx.textAlign = "left";
+        ctx.fillText("now", 18, 50);
+        ctx.fillText("playing", 18, 95);
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+    const radioFaceOn = createRadioFace(true);
+    const radioFaceOff = createRadioFace(false);
+    const radioPanelMat = new THREE.MeshBasicMaterial({ map: radioFaceOff });
+    const radioPanel = new THREE.Mesh(new THREE.PlaneGeometry(0.72, 0.36), radioPanelMat);
+    radioPanel.position.set(-0.12, 1.35, 0.478);
+    radio.add(radioPanel);
+
+    // Speaker slits
+    const matSlit = new THREE.MeshLambertMaterial({ color: 0x3a3a3a });
+    for (let i = 0; i < 4; i++) {
+      const slit = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.045, 0.02), matSlit);
+      slit.position.set(0, 0.42 + i * 0.14, 0.472);
+      radio.add(slit);
+    }
+
+    // Play button on the radio's side — pressed in while playing, popped out
+    // while paused. Protrudes along local +x (the right face of the body).
+    const RADIO_BTN_OUT = 0.68, RADIO_BTN_IN = 0.58;
+    const radioButton = new THREE.Mesh(
+      new THREE.BoxGeometry(0.16, 0.22, 0.22),
+      new THREE.MeshLambertMaterial({ color: 0xd94f38 })
+    );
+    addEdges(radioButton);
+    radioButton.position.set(RADIO_BTN_OUT, 1.38, 0.1);
+    radio.add(radioButton);
+
+    let radioPlaying = false;
+
+    // ─── Spotify embed — real playback for the radio ─────────
+    // Uses Spotify's iFrame Embed API: 30s previews for logged-out visitors,
+    // full tracks when the visitor's browser is logged into Spotify Premium.
+    // The player itself is parked off-viewport (audio only); the radio button
+    // is the sole play/pause control and the banner carries attribution.
+    let iframeAPI: any = null;
+    let embedController: any = null;
+    let embedAdvancePending = false;
+
+    // Invisible but INSIDE the viewport: Spotify's embed lazy-initializes via
+    // IntersectionObserver, so parking it off-screen prevents it from ever
+    // loading. Opacity-0 keeps the geometry intersecting while showing nothing.
+    const embedDiv = document.createElement("div");
+    Object.assign(embedDiv.style, {
+      position: "fixed", right: "18px", bottom: "18px",
+      width: "340px", height: "80px",
+      opacity: "0", pointerEvents: "none",
+    } as CSSStyleDeclaration);
+    const embedInner = document.createElement("div");
+    embedDiv.appendChild(embedInner);
+    document.body.appendChild(embedDiv);
+
+    (window as any).onSpotifyIframeApiReady = (api: any) => { iframeAPI = api; };
+    const embedScript = document.createElement("script");
+    embedScript.src = "https://open.spotify.com/embed/iframe-api/v1";
+    embedScript.async = true;
+    document.body.appendChild(embedScript);
+
+    function embedTracks(): any[] {
+      return (integrations.spotify?.topTracks ?? []).filter((t: any) => t.uri);
+    }
+
+    function playEmbedTrack(idx: number) {
+      const tracks = embedTracks();
+      if (tracks.length === 0) return;
+      trackIdx = ((idx % tracks.length) + tracks.length) % tracks.length;
+      trackStart = performance.now();
+      const uri = tracks[trackIdx].uri;
+      if (embedController) {
+        embedController.loadUri(uri);
+        embedController.play();
+        embedAdvancePending = false;
+      } else if (iframeAPI) {
+        iframeAPI.createController(embedInner, { uri, width: "100%", height: 80 }, (ctrl: any) => {
+          embedController = ctrl;
+          // Auto-advance to the next top track when one finishes
+          ctrl.addListener("playback_update", (e: any) => {
+            const d = e?.data;
+            if (d && d.duration > 0 && d.position >= d.duration - 400 && !embedAdvancePending) {
+              embedAdvancePending = true;
+              playEmbedTrack(trackIdx + 1);
+            }
+          });
+          ctrl.play();
+        });
+      }
+    }
+
+    function toggleRadio() {
+      radioPlaying = !radioPlaying;
+      radioPanelMat.map = radioPlaying ? radioFaceOn : radioFaceOff;
+      radioPanelMat.needsUpdate = true;
+      if (radioPlaying) {
+        trackStart = performance.now();
+        // called from the click gesture → autoplay allowed
+        if (embedTracks().length > 0) playEmbedTrack(trackIdx);
+      } else {
+        embedController?.pause();
+      }
+    }
+
+    // ─── Integrations (Calendly · Hevy · Spotify via backend) ─
+    // Local fallback keeps the scene alive when the API server isn't running;
+    // /api/integrations replaces it (server mocks any service missing keys).
+    function fallbackCalendly() {
+      const now = new Date();
+      const year = now.getFullYear(), month = now.getMonth(), today = now.getDate();
+      const dim = new Date(year, month + 1, 0).getDate();
+      const available: number[] = [], booked: number[] = [];
+      for (let d = today; d <= dim; d++) {
+        const dow = new Date(year, month, d).getDay();
+        if (dow === 0 || dow === 6) continue;
+        (d % 4 === 2 ? booked : available).push(d);
+      }
+      return { year, month, today, available, booked, bookUrl: "https://calendly.com" };
+    }
+    let integrations: any = {
+      calendly: fallbackCalendly(),
+      hevy: { streakWeeks: 0, lastWorkout: null },
+      spotify: { topTracks: [] },
+    };
+    let trackIdx = 0;
+    let trackStart = 0;
+
+    // ─── Desk calendar — Calendly availability on a tent prism ─
+    const calendarG = new THREE.Group();
+    calendarG.position.set(-4.35, DESK_Y, 0.4);
+    calendarG.rotation.y = 0.45;
+    scene.add(calendarG);
+
+    const CAL_W = 1.7, CAL_S = 1.2, CAL_TILT = 0.34;
+    const CAL_H = CAL_S * Math.cos(CAL_TILT); // apex height
+    const CAL_D = CAL_S * Math.sin(CAL_TILT); // half depth at the base
+
+    function makeCalCanvas() {
+      const c = document.createElement("canvas");
+      c.width = 512; c.height = 360;
+      return c;
+    }
+    const calFrontCanvas = makeCalCanvas();
+    const calBackCanvas = makeCalCanvas();
+    const calFrontTex = new THREE.CanvasTexture(calFrontCanvas);
+    const calBackTex = new THREE.CanvasTexture(calBackCanvas);
+    calFrontTex.colorSpace = THREE.SRGBColorSpace;
+    calBackTex.colorSpace = THREE.SRGBColorSpace;
+
+    // Month grid in the Calendly-widget style: green available, orange booked
+    function paintMonth(canvas: HTMLCanvasElement, cal: any, withData: boolean) {
+      const ctx = canvas.getContext("2d")!;
+      const cw = canvas.width, ch = canvas.height;
+      const { year, month } = cal;
+      ctx.fillStyle = "#faf6ec";
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.strokeStyle = "#d8d2c0";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(2, 2, cw - 4, ch - 4);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const monthName = new Date(year, month, 1).toLocaleString("en-US", { month: "long" });
+      ctx.fillStyle = "#4a463c";
+      ctx.font = "500 34px 'Helvetica Neue', Arial, sans-serif";
+      ctx.fillText(`${monthName} ${year}`, cw / 2, 36);
+      const gridX = 12, cellW = (cw - 24) / 7, gridY = 92, rowH = 36;
+      ctx.font = "700 19px Arial";
+      ctx.fillStyle = "#8a857a";
+      ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].forEach((d, i) =>
+        ctx.fillText(d, gridX + cellW * (i + 0.5), 72));
+      const first = new Date(year, month, 1).getDay();
+      const dim = new Date(year, month + 1, 0).getDate();
+      ctx.font = "500 20px Arial";
+      for (let d = 1; d <= dim; d++) {
+        const idx = first + d - 1;
+        const x = gridX + (idx % 7) * cellW;
+        const y = gridY + Math.floor(idx / 7) * rowH;
+        let bg: string | null = null, fg = "#b9b4a6";
+        if (withData) {
+          if (cal.available?.includes(d)) { bg = "#cdea96"; fg = "#4a463c"; }
+          else if (cal.booked?.includes(d)) { bg = "#f5c08a"; fg = "#4a463c"; }
+        } else fg = "#8a857a";
+        if (bg) { ctx.fillStyle = bg; ctx.fillRect(x + 2, y + 2, cellW - 4, rowH - 4); }
+        ctx.fillStyle = fg;
+        ctx.fillText(String(d), x + cellW / 2, y + rowH / 2);
+        if (withData && d === cal.today) {
+          ctx.strokeStyle = "#4a463c";
+          ctx.lineWidth = 2.5;
+          ctx.strokeRect(x + 3, y + 3, cellW - 6, rowH - 6);
+        }
+      }
+      if (withData) {
+        ctx.fillStyle = "#1c1a16";
+        ctx.fillRect(12, ch - 44, cw - 24, 34);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "600 20px Arial";
+        ctx.fillText("Book Now", cw / 2, ch - 27);
+      }
+    }
+
+    function paintCalendar() {
+      const cal = integrations.calendly;
+      paintMonth(calFrontCanvas, cal, true);
+      // Back slope previews next month, plain
+      const nm = cal.month === 11 ? { year: cal.year + 1, month: 0 } : { year: cal.year, month: cal.month + 1 };
+      paintMonth(calBackCanvas, nm, false);
+      calFrontTex.needsUpdate = true;
+      calBackTex.needsUpdate = true;
+    }
+    paintCalendar();
+
+    const calFaceGeo = new THREE.PlaneGeometry(CAL_W, CAL_S);
+    const calFront = new THREE.Mesh(calFaceGeo, new THREE.MeshLambertMaterial({ map: calFrontTex }));
+    calFront.position.set(0, CAL_H / 2, CAL_D / 2);
+    calFront.rotation.x = -CAL_TILT;
+    calFront.castShadow = true;
+    calendarG.add(calFront);
+    // Back slope — identical face mirrored through the apex line
+    const calBackWrap = new THREE.Group();
+    calBackWrap.rotation.y = Math.PI;
+    const calBack = new THREE.Mesh(calFaceGeo, new THREE.MeshLambertMaterial({ map: calBackTex }));
+    calBack.position.set(0, CAL_H / 2, CAL_D / 2);
+    calBack.rotation.x = -CAL_TILT;
+    calBackWrap.add(calBack);
+    calendarG.add(calBackWrap);
+    // Triangular end caps
+    const capShape = new THREE.Shape();
+    capShape.moveTo(CAL_D, 0);
+    capShape.lineTo(-CAL_D, 0);
+    capShape.lineTo(0, CAL_H);
+    capShape.closePath();
+    const capGeo = new THREE.ShapeGeometry(capShape);
+    const capR = new THREE.Mesh(capGeo, matCream);
+    capR.rotation.y = Math.PI / 2;
+    capR.position.x = CAL_W / 2;
+    addEdges(capR);
+    const capL = new THREE.Mesh(capGeo, matCream);
+    capL.rotation.y = -Math.PI / 2;
+    capL.position.x = -CAL_W / 2;
+    addEdges(capL);
+    calendarG.add(capR, capL);
+    // Base plate
+    const calBase = box(CAL_W + 0.08, 0.04, CAL_D * 2 + 0.1);
+    calBase.position.y = 0.02;
+    calendarG.add(calBase);
+
+    // ─── Hevy week-streak counter ────────────────────────────
+    const streakG = new THREE.Group();
+    streakG.position.set(-3.95, DESK_Y, 2.95);
+    streakG.rotation.y = 0.35;
+    scene.add(streakG);
+
+    const streakCanvas = document.createElement("canvas");
+    streakCanvas.width = 256; streakCanvas.height = 148;
+    const streakTex = new THREE.CanvasTexture(streakCanvas);
+    streakTex.colorSpace = THREE.SRGBColorSpace;
+
+    function paintStreak() {
+      const ctx = streakCanvas.getContext("2d")!;
+      ctx.fillStyle = "#171310";
+      ctx.fillRect(0, 0, 256, 148);
+      ctx.strokeStyle = "#3a342a";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(2, 2, 252, 144);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = S_ACCENT;
+      ctx.font = "700 64px ui-monospace, Menlo, monospace";
+      ctx.fillText(String(integrations.hevy?.streakWeeks ?? 0), 128, 62);
+      ctx.fillStyle = S_INK;
+      ctx.font = "600 22px ui-monospace, Menlo, monospace";
+      ctx.fillText("WK STREAK", 128, 112);
+      ctx.fillStyle = S_DIM;
+      ctx.font = "500 13px ui-monospace, Menlo, monospace";
+      ctx.fillText("· hevy ·", 128, 134);
+      streakTex.needsUpdate = true;
+    }
+    paintStreak();
+
+    const streakBody = new THREE.Mesh(
+      new THREE.BoxGeometry(0.95, 0.55, 0.18),
+      [matCream, matCream, matCream, matCream, new THREE.MeshBasicMaterial({ map: streakTex }), matCream]
+    );
+    addEdges(streakBody);
+    streakBody.position.y = 0.295;
+    streakBody.rotation.x = -0.09; // leaned back a touch
+    streakG.add(streakBody);
+    // Mini dumbbell beside the counter
+    const matIron = new THREE.MeshLambertMaterial({ color: 0x4a4a50 });
+    const dbBar = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.05, 0.05), matIron);
+    addEdges(dbBar);
+    dbBar.position.set(0.78, 0.09, 0.12);
+    const dbL = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.19, 0.19), matIron);
+    addEdges(dbL);
+    dbL.position.set(0.57, 0.1, 0.12);
+    const dbR = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.19, 0.19), matIron);
+    addEdges(dbR);
+    dbR.position.set(0.99, 0.1, 0.12);
+    streakG.add(dbBar, dbL, dbR);
+
+    // Live data swap-in
+    fetch("/api/integrations")
+      .then(r => r.json())
+      .then(d => {
+        integrations = { ...integrations, ...d };
+        paintCalendar();
+        paintStreak();
+      })
+      .catch(() => { /* backend not running — fallbacks stay */ });
+
+    // ─── Terminal — avatar chat via the backend proxy ────────
+    // Bot replies type out inside a speech bubble next to the particle face;
+    // inline XML tags in the LLM output drive the face's expressions live.
+    // The Groq key and persona prompt live server-side (see server/index.mjs).
+
+    type FaceExpr = "neutral" | "smile" | "laugh" | "sad" | "confused" | "surprised";
+    let faceExpr: FaceExpr = "neutral";
+    let faceMotion: "none" | "nod" | "shake" = "none";
+    let faceMotionStart = 0;
+    let faceFlap = false;      // mouth-open frame while "talking"
+    let lastFaceKey = "";      // expr|flap — retarget particles when it changes
+    let bubbleTyping = false;
+
+    let termInput = "";
+    let termBusy = false;
+    let termGreeted = false;
+    let lastUserMsg = "";
+    const termHistory: { role: "user" | "assistant"; content: string }[] = [];
+
+    // Speech bubble typewriter state
+    let bubbleClean = "";
+    let bubbleEvents: { i: number; expr: string }[] = [];
+    let bubbleApplied = 0;
+    let bubbleStart = 0;
+    const TYPE_SPEED = 42; // chars per second
+
+    function setBubble(raw: string) {
+      const re = /<\s*(smile|laugh|nod|shake|sad|confused|surprised|neutral)\s*\/?\s*>/gi;
+      let clean = "";
+      const events: { i: number; expr: string }[] = [];
+      let last = 0;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(raw))) {
+        clean += raw.slice(last, m.index);
+        events.push({ i: clean.length, expr: m[1].toLowerCase() });
+        last = m.index + m[0].length;
+      }
+      clean += raw.slice(last);
+      bubbleClean = clean.replace(/[ \t]+/g, " ").trim();
+      bubbleEvents = events;
+      bubbleApplied = 0;
+      bubbleStart = performance.now();
+      faceExpr = "neutral";
+      faceMotion = "none";
+    }
+
+    async function submitTerminal() {
+      const q = termInput.trim();
+      if (!q || termBusy) return;
+      termInput = "";
+      lastUserMsg = q;
+      termBusy = true;
+      bubbleClean = ""; bubbleEvents = []; // thinking dots until the reply lands
+      termHistory.push({ role: "user", content: q });
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: termHistory.slice(-12) }),
+        });
+        const data = await res.json();
+        const text: string =
+          data?.choices?.[0]?.message?.content ??
+          `uplink error <sad/> ${data?.error?.message ?? data?.error ?? `http ${res.status}`}`;
+        if (data?.choices?.[0]?.message?.content) {
+          termHistory.push({ role: "assistant", content: text });
+        }
+        setBubble(text);
+      } catch (err) {
+        setBubble(`uplink error <sad/> is the backend running? (npm run server) ${String(err)}`);
+      }
+      termBusy = false;
+    }
+
     // ─── Cable (verlet, friction only — no gravity) ──────────
     const CABLE_POINTS = 14;
     const FRICTION = 0.9;
@@ -519,10 +1269,13 @@ export default function Scene3D() {
 
     function zoneAt(cx: number, cy: number): NavId | null {
       if (cy < 87) return null;
-      if (cx < 33.4) return "about";
-      if (cx < 66.7) return "work";
-      return "projects";
+      if (cx < 25) return "about";
+      if (cx < 50) return "work";
+      if (cx < 75) return "projects";
+      return "terminal";
     }
+
+    let overScreen = true;
 
     function onPointerMove(e: MouseEvent) {
       pointerVP.x = e.clientX / window.innerWidth;
@@ -532,20 +1285,64 @@ export default function Scene3D() {
       const hit = raycaster.intersectObject(pickPlane, false)[0];
       if (hit) {
         const local = pickPlane.worldToLocal(hit.point.clone());
+        // On the screen itself → hide the OS cursor (the HUD arrow takes over).
+        // Off the screen → hand cursor, so clicks on "real-life" objects
+        // (radio, hardware) stay visible.
+        overScreen =
+          Math.abs(local.x) <= OPEN_W / 2 &&
+          Math.abs(local.y) <= OPEN_H / 2;
         crt.cx = Math.max(0, Math.min(100, (local.x / OPEN_W + 0.5) * 100));
         crt.cy = Math.max(0, Math.min(100, (0.5 - local.y / OPEN_H) * 100));
+      } else {
+        overScreen = false;
       }
-      const z = zoneAt(crt.cx, crt.cy);
+      if (!screenOn) overScreen = false; // dark screen: nothing to point at
+      mount.style.cursor = overScreen ? "none" : "pointer";
+      const z = overScreen ? zoneAt(crt.cx, crt.cy) : null;
       if (z !== hovNav) {
         hovNav = z;
-        if (idleTimer) clearTimeout(idleTimer);
-        if (hovNav) setMode(hovNav);
-        else idleTimer = setTimeout(() => setMode("lattice"), 5000);
+        if (hovNav) { clearIdle(); setMode(hovNav); }
+        else armIdle();
       }
     }
 
-    function onClick() {
-      if (hovNav) setMode(hovNav);
+    // Idle: revert word modes to the lattice after 2 minutes without a click
+    const IDLE_MS = 120_000;
+    function clearIdle() { if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; } }
+    function armIdle() {
+      clearIdle();
+      idleTimer = setTimeout(() => { if (isWordMode(mode)) setMode("lattice"); }, IDLE_MS);
+    }
+
+    function isWithin(obj: THREE.Object3D, root: THREE.Object3D) {
+      let cur: THREE.Object3D | null = obj;
+      while (cur) {
+        if (cur === root) return true;
+        cur = cur.parent;
+      }
+      return false;
+    }
+
+    function onClick(e: MouseEvent) {
+      armIdle(); // any click restarts the 2-minute idle countdown
+      ndc.set((e.clientX / window.innerWidth) * 2 - 1, -((e.clientY / window.innerHeight) * 2 - 1));
+      raycaster.setFromCamera(ndc, camera);
+      // First-hit test against the clickable objects AND their occluders, so
+      // clicking the desk in front of the radio doesn't reach through it.
+      const hits = raycaster.intersectObjects([desk, mousepad, keyboard, mouse3d, monitor, radio, calendarG, streakG], true);
+      // Skip the invisible pointer pick-plane (a huge monitor child) — it
+      // otherwise swallows every click before it can reach the radio.
+      const first = hits.find(h => h.object !== pickPlane && (h.object as THREE.Mesh).isMesh && h.object.visible)?.object;
+      if (first) {
+        if (isWithin(first, powerButton)) { screenOn = !screenOn; return; }
+        if (isWithin(first, radio)) { toggleRadio(); return; }
+        if (isWithin(first, calendarG)) {
+          // The prism's Book Now — opens the real Calendly page
+          window.open(integrations.calendly?.bookUrl ?? "https://calendly.com", "_blank", "noopener");
+          return;
+        }
+      }
+      if (hovNav && screenOn) setMode(hovNav);
     }
     function onMouseDown(e: MouseEvent) {
       if (e.button === 0) buttons.left = true;
@@ -556,7 +1353,17 @@ export default function Scene3D() {
       if (e.button === 2) buttons.right = false;
     }
     function onContextMenu(e: MouseEvent) { e.preventDefault(); }
-    function onKeyDown(e: KeyboardEvent) { pressedCodes.add(e.code); }
+    function onKeyDown(e: KeyboardEvent) {
+      pressedCodes.add(e.code);
+      // Terminal input capture
+      if (mode === "terminal" && screenOn) {
+        if (e.key === "Enter") void submitTerminal();
+        else if (e.key === "Backspace") termInput = termInput.slice(0, -1);
+        else if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
+          if (termInput.length < 200) termInput += e.key;
+        }
+      }
+    }
     function onKeyUp(e: KeyboardEvent) { pressedCodes.delete(e.code); }
 
     window.addEventListener("mousemove", onPointerMove);
@@ -581,14 +1388,124 @@ export default function Scene3D() {
     function drawHUD() {
       hud.clearRect(0, 0, HUD_W, HUD_H);
 
+      // Terminal — avatar chat pane; the face itself is particles rendered by
+      // the ascii-digit pipeline behind this HUD (see computeTargets).
+      if (mode === "terminal") {
+        const now = performance.now();
+        if (!termGreeted) {
+          termGreeted = true;
+          setBubble("hey, i'm adrian — well, the digit version of him <smile/> ask me about my work, projects, or anything else <nod/>");
+        }
+
+        // Typewriter reveal + expression events
+        const revealed = Math.min(bubbleClean.length, Math.floor(((now - bubbleStart) / 1000) * TYPE_SPEED));
+        while (bubbleApplied < bubbleEvents.length && bubbleEvents[bubbleApplied].i <= revealed) {
+          const ev = bubbleEvents[bubbleApplied++].expr;
+          if (ev === "nod" || ev === "shake") { faceMotion = ev; faceMotionStart = now; }
+          else faceExpr = ev as FaceExpr;
+        }
+        const typing = revealed < bubbleClean.length;
+        // Once the whole reply has been read out, settle into a neutral smile
+        if (bubbleTyping && !typing && bubbleClean) {
+          faceExpr = "smile";
+          faceMotion = "none";
+        }
+        bubbleTyping = typing;
+
+        // ── Speech bubbles ──
+        hud.textAlign = "left";
+        hud.font = "500 21px ui-monospace, Menlo, monospace";
+        const wrap = (text: string, maxW: number) => {
+          const out: string[] = [];
+          for (const para of text.split("\n")) {
+            let line = "";
+            for (const word of para.split(" ")) {
+              const probe = line ? line + " " + word : word;
+              if (hud.measureText(probe).width > maxW && line) { out.push(line); line = word; }
+              else line = probe;
+            }
+            out.push(line);
+          }
+          return out;
+        };
+
+        // User's message — small bubble, top right
+        if (lastUserMsg) {
+          const uLines = wrap(lastUserMsg, 480);
+          const uw = Math.min(480, Math.max(...uLines.map(l => hud.measureText(l).width))) + 32;
+          const ux = HUD_W - 24 - uw;
+          const uh = uLines.length * 27 + 22;
+          hud.fillStyle = "rgba(232,197,71,0.07)";
+          hud.fillRect(ux, 22, uw, uh);
+          hud.strokeStyle = S_DIM;
+          hud.lineWidth = 2;
+          hud.strokeRect(ux, 22, uw, uh);
+          hud.fillStyle = S_INK;
+          uLines.forEach((l, i) => hud.fillText(l, ux + 16, 40 + i * 27));
+        }
+
+        // Bot speech bubble — tail pointing at the particle face (screen-left)
+        const FY = 355; // face center in HUD pixels
+        const BX = 410, BW = HUD_W - BX - 28;
+        const shown = bubbleClean.slice(0, revealed);
+        const bLines = bubbleClean
+          ? wrap(shown + (typing ? "▋" : ""), BW - 36)
+          : [termBusy ? "•".repeat(1 + (Math.floor(now / 300) % 3)) : ""];
+        if (bLines[0] !== "") {
+          const bh = bLines.length * 27 + 26;
+          const by = Math.max(96, Math.min(FY - bh / 2, HUD_H - TAB_H - 110 - bh));
+          hud.fillStyle = "rgba(23,19,14,0.96)";
+          hud.fillRect(BX, by, BW, bh);
+          hud.strokeStyle = S_ACCENT;
+          hud.lineWidth = 2;
+          hud.strokeRect(BX, by, BW, bh);
+          // Tail
+          const ty = Math.min(Math.max(FY, by + 18), by + bh - 18);
+          hud.fillStyle = "rgba(23,19,14,0.96)";
+          hud.beginPath();
+          hud.moveTo(BX + 1, ty - 12); hud.lineTo(BX - 22, ty); hud.lineTo(BX + 1, ty + 12);
+          hud.closePath();
+          hud.fill();
+          hud.strokeStyle = S_ACCENT;
+          hud.beginPath();
+          hud.moveTo(BX + 1, ty - 12); hud.lineTo(BX - 22, ty); hud.lineTo(BX + 1, ty + 12);
+          hud.stroke();
+          hud.fillStyle = S_INK;
+          bLines.forEach((l, i) => hud.fillText(l, BX + 18, by + 22 + i * 27));
+        }
+
+        // ── Chatbox — bottom aligned, above the tabs ──
+        const iy = HUD_H - TAB_H - 74;
+        hud.fillStyle = "rgba(23,19,14,0.96)";
+        hud.fillRect(20, iy, HUD_W - 40, 56);
+        hud.strokeStyle = S_LINE;
+        hud.lineWidth = 2;
+        hud.strokeRect(20, iy, HUD_W - 40, 56);
+        hud.font = "500 22px ui-monospace, Menlo, monospace";
+        if (termInput) {
+          hud.fillStyle = S_ACCENT;
+          hud.fillText("> " + termInput, 38, iy + 29);
+        } else {
+          hud.fillStyle = S_ACCENT;
+          hud.fillText(">", 38, iy + 29);
+          hud.fillStyle = S_DIM;
+          hud.fillText(" type a message and press enter…", 52, iy + 29);
+        }
+        if (Math.floor(now / 500) % 2 === 0) {
+          const cw = hud.measureText("> " + termInput).width;
+          hud.fillStyle = S_ACCENT;
+          hud.fillRect(38 + cw + 5, iy + 17, 12, 24);
+        }
+      }
+
       // Tabs
       const y0 = HUD_H - TAB_H;
       hud.fillStyle = "rgba(18,16,12,0.95)";
       hud.fillRect(0, y0, HUD_W, TAB_H);
       hud.fillStyle = S_LINE;
       hud.fillRect(0, y0, HUD_W, 2);
-      const cellW = HUD_W / 3;
-      hud.font = "500 26px ui-monospace, Menlo, monospace";
+      const cellW = HUD_W / NAV_TABS.length;
+      hud.font = "500 21px ui-monospace, Menlo, monospace";
       hud.textAlign = "center";
       hud.textBaseline = "middle";
       NAV_TABS.forEach((tab, i) => {
@@ -624,22 +1541,41 @@ export default function Scene3D() {
       hud.fillStyle = vignette;
       hud.fillRect(0, 0, HUD_W, HUD_H);
 
-      // Cursor arrow
-      const px = crt.cx / 100 * HUD_W;
-      const py = crt.cy / 100 * HUD_H;
-      hud.save();
-      hud.translate(px, py);
-      hud.scale(1.6, 1.6);
-      hud.beginPath();
-      hud.moveTo(0.5, 0.5); hud.lineTo(0.5, 15); hud.lineTo(4, 11.8);
-      hud.lineTo(6.8, 18); hud.lineTo(9.2, 17); hud.lineTo(6.6, 11); hud.lineTo(11.5, 11);
-      hud.closePath();
-      hud.fillStyle = "#ffffff";
-      hud.strokeStyle = "#000000";
-      hud.lineWidth = 1;
-      hud.fill();
-      hud.stroke();
-      hud.restore();
+      // Now-playing message — top left corner while the radio plays.
+      // Queue = your recent Spotify top tracks; no banner without real tracks.
+      const tracks = integrations.spotify?.topTracks ?? [];
+      if (radioPlaying && tracks.length > 0) {
+        hud.font = "500 24px ui-monospace, Menlo, monospace";
+        hud.textAlign = "left";
+        hud.textBaseline = "middle";
+        const tr = tracks[trackIdx % tracks.length];
+        const msg = `🎵 Now Playing - ${tr.name} — ${tr.artist}`;
+        const tw = hud.measureText(msg).width;
+        hud.fillStyle = "rgba(18,16,12,0.82)";
+        hud.fillRect(16, 18, tw + 30, 42);
+        hud.fillStyle = S_ACCENT;
+        hud.fillText(msg, 32, 40);
+      }
+
+      // Cursor arrow — only while the pointer is actually on the screen;
+      // off-screen the visible OS hand cursor takes over.
+      if (overScreen) {
+        const px = crt.cx / 100 * HUD_W;
+        const py = crt.cy / 100 * HUD_H;
+        hud.save();
+        hud.translate(px, py);
+        hud.scale(1.6, 1.6);
+        hud.beginPath();
+        hud.moveTo(0.5, 0.5); hud.lineTo(0.5, 15); hud.lineTo(4, 11.8);
+        hud.lineTo(6.8, 18); hud.lineTo(9.2, 17); hud.lineTo(6.6, 11); hud.lineTo(11.5, 11);
+        hud.closePath();
+        hud.fillStyle = "#ffffff";
+        hud.strokeStyle = "#000000";
+        hud.lineWidth = 1;
+        hud.fill();
+        hud.stroke();
+        hud.restore();
+      }
 
       hudTexture.needsUpdate = true;
     }
@@ -729,6 +1665,41 @@ export default function Scene3D() {
         points2.scale.setScalar(1 / 10);
         points2.rotation.y -= 0.007;
         points2.rotation.x = Math.sin(t * 0.22 + 1.7) * 0.16;
+      } else if (mode === "terminal") {
+        points2.visible = false;
+        // Talking mouth flap re-targets the particle face
+        const flap = bubbleTyping && faceExpr === "neutral" && Math.floor(now / 150) % 2 === 0;
+        const key = `${faceExpr}|${flap ? 1 : 0}`;
+        if (key !== lastFaceKey) {
+          const exprChanged = lastFaceKey !== "" && !lastFaceKey.startsWith(faceExpr + "|");
+          lastFaceKey = key;
+          faceFlap = flap;
+          computeTargets();
+          // Small, quick re-piece between expressions — no explosive scatter
+          if (exprChanged) {
+            phase = 2;
+            phaseStart = nowS;
+          }
+        }
+        // Head motion: nod bobs vertically, shake sways horizontally —
+        // fast sway that dies out quickly
+        let ox = 0, oy = 0;
+        if (faceMotion !== "none") {
+          const age = (now - faceMotionStart) / 1000;
+          if (age > 0.55) faceMotion = "none";
+          else {
+            const ease = 1 - age / 0.55;
+            if (faceMotion === "nod") oy = Math.sin(age * 22) * 0.08 * ease;
+            else ox = Math.sin(age * 26) * 0.1 * ease;
+          }
+        }
+        if (faceExpr === "laugh") oy += Math.sin(now / 65) * 0.02; // giggle bounce
+        points.position.x += (ox - points.position.x) * 0.3;
+        points.position.y += (oy - points.position.y) * 0.3;
+        points.position.z *= 0.88;
+        points.scale.lerp(new THREE.Vector3(1, 1, 1), 0.15);
+        points.rotation.y *= 0.92;
+        points.rotation.x *= 0.92;
       } else {
         points2.visible = false;
         points.position.multiplyScalar(0.88);
@@ -736,6 +1707,9 @@ export default function Scene3D() {
         points.rotation.y += (Math.sin(t * 0.4) * 0.12 - points.rotation.y) * 0.04;
         points.rotation.x += (Math.sin(t * 0.3) * 0.05 - points.rotation.x) * 0.04;
       }
+
+      // ── Ceiling fan spin — its shadow sweeps the desk ──
+      fan.rotation.y += 0.045;
 
       // ── Keyboard keys ──
       for (const [code, k] of keyMeshes) {
@@ -750,6 +1724,17 @@ export default function Scene3D() {
       const mz = 1.9 + pointerVP.y * (3.7 - 1.9);
       mouse3d.position.set(mx, DESK_Y, mz);
       mouse3d.rotation.y = -((pointerVP.x - 0.5) * 0.24 - (pointerVP.y - 0.5) * 0.09);
+      // Radio button: sinks into the side while playing, pops back out when paused
+      const btnTargetX = radioPlaying ? RADIO_BTN_IN : RADIO_BTN_OUT;
+      radioButton.position.x += (btnTargetX - radioButton.position.x) * 0.25;
+
+      // Monitor power button: pressed in while the screen is off
+      const pwrTargetZ = screenOn ? POWER_OUT : POWER_IN;
+      powerButton.position.z += (pwrTargetZ - powerButton.position.z) * 0.25;
+      screenPlane.visible = screenOn;
+      hudPlane.visible = screenOn;
+      crtGlow.intensity += ((screenOn ? 0.55 : 0) - crtGlow.intensity) * 0.15;
+
       (btnL.material as THREE.Material) = buttons.left ? matCreamDark : matCream;
       (btnR.material as THREE.Material) = buttons.right ? matCreamDark : matCream;
 
@@ -798,17 +1783,19 @@ export default function Scene3D() {
       }
       const curve = new THREE.CatmullRomCurve3(cablePts.map(c => c.p));
       cableMesh = new THREE.Mesh(new THREE.TubeGeometry(curve, 32, 0.035, 6), cableMat);
+      cableMesh.castShadow = true;
       scene.add(cableMesh);
 
       // ── Render ──
-      drawHUD();
-
-      renderer.setRenderTarget(particleRT);
-      renderer.clear();
-      renderer.render(sphereScene, sphereCamera);
-      renderer.setRenderTarget(screenRT);
-      renderer.render(asciiScene, asciiCamera);
-      renderer.setRenderTarget(null);
+      if (screenOn) {
+        drawHUD();
+        renderer.setRenderTarget(particleRT);
+        renderer.clear();
+        renderer.render(sphereScene, sphereCamera);
+        renderer.setRenderTarget(screenRT);
+        renderer.render(asciiScene, asciiCamera);
+        renderer.setRenderTarget(null);
+      }
       renderer.render(scene, camera);
     }
     animate();
@@ -816,6 +1803,11 @@ export default function Scene3D() {
     return () => {
       cancelAnimationFrame(raf);
       if (idleTimer) clearTimeout(idleTimer);
+      clearInterval(skyInterval);
+      embedController?.destroy?.();
+      embedDiv.remove();
+      embedScript.remove();
+      delete (window as any).onSpotifyIframeApiReady;
       window.removeEventListener("mousemove", onPointerMove);
       window.removeEventListener("click", onClick);
       window.removeEventListener("mousedown", onMouseDown);
