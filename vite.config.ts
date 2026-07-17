@@ -38,6 +38,25 @@ function postersManifest() {
   }
 }
 
+// Same idea as postersManifest, for the extras-page photo gallery.
+function galleryManifest() {
+  const vid = 'virtual:gallery'
+  return {
+    name: 'gallery-manifest',
+    resolveId(id) {
+      if (id === vid) return '\0' + vid
+    },
+    load(id) {
+      if (id !== '\0' + vid) return
+      const dir = path.resolve(__dirname, 'public/gallery')
+      const files = fs.existsSync(dir)
+        ? fs.readdirSync(dir).filter((f) => /\.(png|jpe?g|webp|gif|avif)$/i.test(f))
+        : []
+      return `export default ${JSON.stringify(files.map((f) => '/gallery/' + encodeURIComponent(f)))}`
+    },
+  }
+}
+
 export default defineConfig({
   server: {
     // Local dev: `npm run server` hosts the API on :3001; Vite proxies /api to it.
@@ -46,6 +65,7 @@ export default defineConfig({
   plugins: [
     figmaAssetResolver(),
     postersManifest(),
+    galleryManifest(),
     // The React and Tailwind plugins are both required for Make, even if
     // Tailwind is not being actively used – do not remove them
     react(),

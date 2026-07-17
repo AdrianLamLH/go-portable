@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import posterUrls from "virtual:posters";
+import galleryUrls from "virtual:gallery";
+import { parseGIF, decompressFrames } from "gifuct-js";
 
 // Full 3D-polygon rendition of the workstation: CRT monitor, keyboard and
 // mouse are low-poly meshes with flat lambert shading and dark edge outlines.
@@ -419,6 +421,96 @@ export default function Scene3D() {
       };
       img.src = url;
     }
+
+    // ─── Media for the personal-projects & extras HUD pages ───────
+    // Static images — a plain Image() decodes fine off-DOM.
+    const loadImg = (src: string) => {
+      const img = new Image();
+      img.src = src;
+      return img;
+    };
+    const nookImg = loadImg("/projects/nook.png");
+    const matchaImg = loadImg("/projects/matcha-game.jpg");
+    const shorthandImg = loadImg("/projects/shorthand-example.png");
+    const galleryImgs = galleryUrls.map(url => {
+      const img = new Image();
+      img.src = url;
+      return img;
+    });
+
+    // Animated GIFs — canvas drawImage() only ever grabs a still frame from an
+    // <img>, and browsers pause GIF decoding on elements with no visible
+    // area anyway, so the frames are decoded by hand once up front and
+    // played back on our own clock (advanced in the animate loop below).
+    // Frames are downscaled to maxW so big gifs don't hoard memory.
+    type GifFrame = { canvas: HTMLCanvasElement; delay: number };
+    type GifAnim = { frames: GifFrame[]; idx: number; elapsed: number };
+    const gifAnims: GifAnim[] = [];
+    function loadGifAnim(url: string, maxW = 720) {
+      const anim: GifAnim = { frames: [], idx: 0, elapsed: 0 };
+      gifAnims.push(anim);
+      fetch(url)
+        .then(r => r.arrayBuffer())
+        .then(buf => {
+          const gif = parseGIF(buf);
+          const frames = decompressFrames(gif, true);
+          const W = gif.lsd.width, H = gif.lsd.height;
+          const s = Math.min(1, maxW / W);
+          const SW = Math.round(W * s), SH = Math.round(H * s);
+          const work = document.createElement("canvas");
+          work.width = W; work.height = H;
+          const wctx = work.getContext("2d")!;
+          let prevSnapshot: ImageData | null = null;
+          const out: GifFrame[] = [];
+          for (const f of frames) {
+            if (f.disposalType === 2) wctx.clearRect(0, 0, W, H);
+            else if (f.disposalType === 3 && prevSnapshot) wctx.putImageData(prevSnapshot, 0, 0);
+            if (f.disposalType === 3) prevSnapshot = wctx.getImageData(0, 0, W, H);
+            const patch = document.createElement("canvas");
+            patch.width = f.dims.width; patch.height = f.dims.height;
+            const pctx = patch.getContext("2d")!;
+            const patchData = pctx.createImageData(f.dims.width, f.dims.height);
+            patchData.data.set(f.patch);
+            pctx.putImageData(patchData, 0, 0);
+            wctx.drawImage(patch, f.dims.left, f.dims.top);
+            const snap = document.createElement("canvas");
+            snap.width = SW; snap.height = SH;
+            snap.getContext("2d")!.drawImage(work, 0, 0, SW, SH);
+            out.push({ canvas: snap, delay: Math.max(20, f.delay) });
+          }
+          anim.frames = out;
+        })
+        .catch(() => { /* thumb just stays a placeholder box */ });
+      return anim;
+    }
+    const captchaAnim = loadGifAnim("/projects/ai-proof-captcha.gif");
+    const neocitiesAnim = loadGifAnim("/projects/neocities-site.gif");
+    const chinatownAnim = loadGifAnim("/projects/chinatown-hacks.gif");
+
+    // Cover-fit draws src into (x,y,w,h), clipped so nothing bleeds outside.
+    // sw/sh are the source's natural dimensions; pass 0 for "not ready yet".
+    function drawThumb(
+      ctx: CanvasRenderingContext2D, src: CanvasImageSource | null, sw: number, sh: number,
+      x: number, y: number, w: number, h: number
+    ) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, w, h);
+      ctx.clip();
+      if (src && sw > 0 && sh > 0) {
+        const s = Math.max(w / sw, h / sh);
+        const iw = sw * s, ih = sh * s;
+        ctx.drawImage(src, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
+      } else {
+        ctx.fillStyle = "rgba(232,197,71,0.08)";
+        ctx.fillRect(x, y, w, h);
+      }
+      ctx.restore();
+      ctx.strokeStyle = "#3a342a";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, w, h);
+    }
+
     const poster = new THREE.Mesh(
       new THREE.PlaneGeometry(5.4, 8.1), // slightly shrunk so the white mat border reads clearly
       posterMat
@@ -1474,11 +1566,16 @@ export default function Scene3D() {
     let openPage: PageId | null = null;
     let pageScroll = 0;
     let pageMax = 0;               // max scroll, measured from painted content
-    let windowOpenedAt = 0;        // drives the skill-bar fill animation
     let uselessClicks = 0;
     // On-screen (HUD px) rect of the projects page's useless button, refreshed
     // every painted frame so scrolled positions stay clickable
     let uselessBtnRect: { x: number; y: number; w: number; h: number } | null = null;
+    // Extras-page slideshow — index, last auto-advance time, and the arrow
+    // hotspots (screen px, refreshed every painted frame like the button above)
+    let slideIdx = 0;
+    let slideAt = 0;
+    let slidePrevRect: { x: number; y: number; w: number; h: number } | null = null;
+    let slideNextRect: { x: number; y: number; w: number; h: number } | null = null;
 
     const TITLE_H = 56;
     const XB = { x: 14, y: 12, w: 34, h: 32 }; // close button, top-left
@@ -1493,7 +1590,6 @@ export default function Scene3D() {
       pageScroll = 0;
       pageMax = 0;
       uselessBtnRect = null;
-      windowOpenedAt = performance.now();
       setMode(id === "chat" ? "terminal" : "lattice");
     }
     function closeWindow() {
@@ -1519,6 +1615,16 @@ export default function Scene3D() {
       if (inRect(px, py, XB)) { closeWindow(); return; }
       if (openPage === "projects" && uselessBtnRect && inRect(px, py, uselessBtnRect)) {
         uselessClicks++;
+      }
+      if (openPage === "extras" && galleryImgs.length > 0) {
+        const n = galleryImgs.length;
+        if (slidePrevRect && inRect(px, py, slidePrevRect)) {
+          slideIdx = (slideIdx + n - 1) % n;
+          slideAt = performance.now(); // manual flip restarts the auto-play timer
+        } else if (slideNextRect && inRect(px, py, slideNextRect)) {
+          slideIdx = (slideIdx + 1) % n;
+          slideAt = performance.now();
+        }
       }
     }
 
@@ -1783,6 +1889,20 @@ export default function Scene3D() {
       return y + 36;
     }
 
+    // Word-wraps against the *current* hud.font — call after setting font.
+    function wrapLines(text: string, maxW: number): string[] {
+      const words = text.split(" ");
+      const out: string[] = [];
+      let line = "";
+      for (const w of words) {
+        const probe = line ? line + " " + w : w;
+        if (hud.measureText(probe).width > maxW && line) { out.push(line); line = w; }
+        else line = probe;
+      }
+      if (line) out.push(line);
+      return out;
+    }
+
     function paintAbout(now: number) {
       let y = 24;
       hud.textAlign = "center";
@@ -1864,11 +1984,11 @@ export default function Scene3D() {
 
       hud.font = `500 15px ${MONO}`;
       hud.fillStyle = S_DIM;
-      hud.fillText("best viewed at 1024×768 · guestbook lives in extras", HUD_W / 2, y);
+      hud.fillText("best viewed at 1024×768 · photo dump lives in extras", HUD_W / 2, y);
       return y + 30;
     }
 
-    function paintWork(now: number) {
+    function paintWork() {
       let y = 16;
       hud.textBaseline = "middle";
       hud.textAlign = "left";
@@ -1877,7 +1997,12 @@ export default function Scene3D() {
       hud.fillText("C:\\adrian\\resume.doc", 84, y); y += 42;
 
       function drawCard(role: string, co: string, when: string, pts: string[]) {
-        const h = 52 + pts.length * 27 + 12;
+        hud.font = `500 19px ${MONO}`;
+        const wrapMaxW = HUD_W - 220; // clears the box's right edge with room to spare
+        const wrapped = pts.map(p => wrapLines(p, wrapMaxW));
+        const totalLines = wrapped.reduce((s, ls) => s + ls.length, 0);
+        const LINE_H = 25;
+        const h = 52 + totalLines * LINE_H + 12;
         hud.strokeStyle = "#3a342a";
         hud.lineWidth = 2;
         hud.strokeRect(60, y, HUD_W - 120, h);
@@ -1896,7 +2021,13 @@ export default function Scene3D() {
         hud.textAlign = "left";
         hud.font = `500 19px ${MONO}`;
         hud.fillStyle = S_INK;
-        pts.forEach((p, i) => hud.fillText(`▸ ${p}`, 100, y + 62 + i * 27));
+        let by = y + 62;
+        wrapped.forEach(lines => {
+          lines.forEach((line, li) => {
+            hud.fillText((li === 0 ? "▸ " : "   ") + line, 100, by);
+            by += LINE_H;
+          });
+        });
         y += h + 18;
       }
 
@@ -1946,29 +2077,27 @@ export default function Scene3D() {
       hud.fillText("UCLA — B.S. Mathematics of Computation", 104, y);
       y += 48;
 
-      // Skill bars fill up when the window opens — RPG stat-screen rules
-      y = sectionHeader(">> skill points", y);
-      const anim = Math.min(1, (now - windowOpenedAt) / 900);
-      ([
-        ["typescript", 92],
-        ["three.js", 78],
-        ["css wizardry", 66],
-        ["talking to CRTs", 99],
-      ] as const).forEach(([name, v]) => {
-        hud.font = `500 19px ${MONO}`;
-        hud.fillStyle = S_INK;
-        hud.fillText(name, 104, y);
+      y = sectionHeader(">> skills", y);
+      const skills = [
+        "python", "sql", "pytorch", "langchain", "pyspark", "claude agent sdk",
+        "aws", "docker", "git & ci/cd", "fastapi", "typescript", "react", "onnx", "faiss",
+      ];
+      hud.font = `500 18px ${MONO}`;
+      hud.textAlign = "left";
+      const CHIP_H = 34, CHIP_PAD = 14, CHIP_GAP = 10, rowMaxX = HUD_W - 84;
+      let cx = 104;
+      skills.forEach(name => {
+        const w = hud.measureText(name).width + CHIP_PAD * 2;
+        if (cx + w > rowMaxX) { cx = 104; y += CHIP_H + 10; }
         hud.strokeStyle = "#3a342a";
         hud.lineWidth = 2;
-        hud.strokeRect(330, y - 10, 420, 20);
-        hud.fillStyle = S_ACCENT;
-        hud.fillRect(333, y - 7, 414 * (v / 100) * anim, 14);
-        hud.font = `500 16px ${MONO}`;
-        hud.fillStyle = S_DIM;
-        hud.fillText(String(Math.round(v * anim)), 766, y);
-        y += 36;
+        hud.strokeRect(cx, y - CHIP_H / 2, w, CHIP_H);
+        hud.fillStyle = S_INK;
+        hud.fillText(name, cx + CHIP_PAD, y + 1);
+        cx += w + CHIP_GAP;
       });
-      return y + 20;
+      y += CHIP_H + 20;
+      return y + 10;
     }
 
     function paintProjects(px: number, py: number) {
@@ -1977,38 +2106,84 @@ export default function Scene3D() {
       hud.textAlign = "center";
       hud.font = `700 28px ${MONO}`;
       hud.fillStyle = S_ACCENT;
-      hud.fillText("★ personal projects ★", HUD_W / 2, y); y += 40;
-      hud.font = `500 17px ${MONO}`;
-      hud.fillStyle = S_DIM;
-      hud.fillText("[ filler cards — real projects incoming ]", HUD_W / 2, y); y += 42;
+      hud.fillText("★ personal projects ★", HUD_W / 2, y); y += 50;
 
-      const projects = [
-        { name: "this website", desc: "a fake OS on a fake CRT on a (real?) desk. you are here.", tags: "three.js · shaders · canvas", stars: 5 },
-        { name: "digit-face terminal", desc: "the lil guy in let's chat.exe — 5,500 particles doing an impression of me.", tags: "webgl · llm · particles", stars: 5 },
-        { name: "[project three]", desc: "[one-liner about a cool thing you built goes here]", tags: "[tags]", stars: 4 },
-        { name: "[project four]", desc: "[another cool thing — flash-game energy encouraged]", tags: "[tags]", stars: 3 },
+      // 2×2 gallery — a thumbnail (gif or image), name, blurb, tags per card
+      const drawStill = (img: HTMLImageElement) =>
+        (x: number, y2: number, w: number, h: number) =>
+          drawThumb(hud, img.complete ? img : null, img.naturalWidth, img.naturalHeight, x, y2, w, h);
+      const drawGifThumb = (anim: GifAnim) =>
+        (x: number, y2: number, w: number, h: number) => {
+          const cf = anim.frames[anim.idx];
+          drawThumb(hud, cf?.canvas ?? null, cf?.canvas.width ?? 0, cf?.canvas.height ?? 0, x, y2, w, h);
+        };
+      const cards: {
+        name: string;
+        draw: (x: number, y: number, w: number, h: number) => void;
+        blurb: string;
+        tags: string;
+      }[] = [
+        {
+          name: "chinatown hacks",
+          draw: drawGifThumb(chinatownAnim),
+          blurb: "co-organized a hackathon for 25+ bay area high schools — $50k+ raised.",
+          tags: "community · hackathon · sf",
+        },
+        {
+          name: "shorthandml",
+          draw: drawStill(shorthandImg),
+          blurb: "a cnn-transformer-lstm that learns to read gregg shorthand squiggles.",
+          tags: "pytorch · ctc · beam search",
+        },
+        {
+          name: "gotcha! — ai-proof captcha",
+          draw: drawGifThumb(captchaAnim),
+          blurb: "2nd @ anthropic x menlo builder day — beating computer use with motion blur.",
+          tags: "claude · computer use · $55k",
+        },
+        {
+          name: "personal website, twice",
+          draw: drawGifThumb(neocitiesAnim),
+          blurb: "the hand-drawn neocities original, reborn as this fake OS on a CRT. you are here.",
+          tags: "neocities · three.js · canvas",
+        },
+        {
+          name: "nook",
+          draw: drawStill(nookImg),
+          blurb: "a cozy ios app for livestreaming focus sessions to real friends only.",
+          tags: "swift · supabase · ios",
+        },
+        {
+          name: "matcha",
+          draw: drawStill(matchaImg),
+          blurb: "drop in your class notes, get back a playable quiz game. learning, but make it arcade.",
+          tags: "next.js · ai sdk · llm",
+        },
       ];
+
+      const GAP = 16, CARD_W = (HUD_W - 120 - GAP) / 2, THUMB_H = 210, TEXT_H = 96;
+      const CARD_H = THUMB_H + TEXT_H;
       hud.textAlign = "left";
-      for (const p of projects) {
-        const h = 104;
+      cards.forEach((p, i) => {
+        const cx = 60 + (i % 2) * (CARD_W + GAP);
+        const cy = y + Math.floor(i / 2) * (CARD_H + GAP);
         hud.strokeStyle = "#3a342a";
         hud.lineWidth = 2;
-        hud.strokeRect(60, y, HUD_W - 120, h);
-        hud.font = `700 22px ${MONO}`;
+        hud.strokeRect(cx, cy, CARD_W, CARD_H);
+        p.draw(cx, cy, CARD_W, THUMB_H);
+        hud.font = `700 19px ${MONO}`;
         hud.fillStyle = S_ACCENT;
-        hud.fillText(p.name, 84, y + 28);
-        hud.textAlign = "right";
-        hud.fillText("★".repeat(p.stars) + "☆".repeat(5 - p.stars), HUD_W - 84, y + 28);
-        hud.textAlign = "left";
-        hud.font = `500 19px ${MONO}`;
+        hud.fillText(p.name, cx + 14, cy + THUMB_H + 24);
+        hud.font = `500 15px ${MONO}`;
         hud.fillStyle = S_INK;
-        hud.fillText(p.desc, 84, y + 58);
-        hud.font = `500 16px ${MONO}`;
+        wrapLines(p.blurb, CARD_W - 28).slice(0, 2).forEach((line, li) =>
+          hud.fillText(line, cx + 14, cy + THUMB_H + 48 + li * 20));
+        hud.font = `500 13px ${MONO}`;
         hud.fillStyle = S_DIM;
-        hud.fillText(p.tags, 84, y + 84);
-        y += h + 16;
-      }
-      y += 14;
+        hud.fillText(p.tags, cx + 14, cy + CARD_H - 12);
+      });
+      const rows = Math.ceil(cards.length / 2);
+      y += rows * CARD_H + (rows - 1) * GAP + 24;
 
       // The useless button — peak flash-game interactivity
       const bw = 320, bh = 52, bx = HUD_W / 2 - bw / 2;
@@ -2038,14 +2213,14 @@ export default function Scene3D() {
       return y + 10;
     }
 
-    function paintExtras(now: number) {
+    function paintExtras(now: number, px: number, py: number) {
       let y = 22;
       hud.textBaseline = "middle";
       // Marquee — obligatory
       hud.font = `700 21px ${MONO}`;
       hud.fillStyle = S_ACCENT;
       hud.textAlign = "left";
-      const mtext = "✦ welcome to the extras zone ✦ thanks for scrolling ✦ sign the guestbook ✦ ";
+      const mtext = "✦ photo dump ✦ mostly gym and questionable lighting ✦ ";
       const mw = hud.measureText(mtext).width;
       const off = (now / 20) % mw;
       hud.fillText(mtext, -off, y);
@@ -2053,56 +2228,74 @@ export default function Scene3D() {
       hud.fillText(mtext, -off + mw * 2, y);
       y += 54;
 
-      y = sectionHeader(">> hobbies", y);
-      hud.font = `500 19px ${MONO}`;
-      hud.fillStyle = S_INK;
-      [
-        "· gym — the dumbbell on my desk is load-bearing",
-        "· radio — press play on the grey box next to the monitor",
-        "· skies — the window out there runs on real new york time",
-      ].forEach(l => { hud.fillText(l, 104, y); y += 30; });
-      y += 24;
+      const n = galleryImgs.length;
+      // Auto-play: advance every few seconds while the page is open
+      if (n > 0) {
+        if (slideAt === 0) slideAt = now;
+        if (now - slideAt > 4000) { slideIdx = (slideIdx + 1) % n; slideAt = now; }
+      }
 
-      y = sectionHeader(">> webring", y);
+      // The slide — contain-fit inside one big frame
+      const FX = 72, FW = HUD_W - 144, FH = 470;
+      hud.fillStyle = "#12100c";
+      hud.fillRect(FX, y, FW, FH);
       hud.textAlign = "center";
+      if (n > 0) {
+        const img = galleryImgs[slideIdx % n];
+        if (img.complete && img.naturalWidth > 0) {
+          const s = Math.min(FW / img.naturalWidth, FH / img.naturalHeight);
+          const iw = img.naturalWidth * s, ih = img.naturalHeight * s;
+          hud.drawImage(img, FX + (FW - iw) / 2, y + (FH - ih) / 2, iw, ih);
+        } else {
+          hud.font = `500 18px ${MONO}`;
+          hud.fillStyle = S_DIM;
+          hud.fillText("developing…", HUD_W / 2, y + FH / 2);
+        }
+      } else {
+        hud.font = `500 18px ${MONO}`;
+        hud.fillStyle = S_DIM;
+        hud.fillText("no photos yet — drop some into public/gallery/", HUD_W / 2, y + FH / 2);
+      }
+      hud.strokeStyle = "#3a342a";
+      hud.lineWidth = 2;
+      hud.strokeRect(FX, y, FW, FH);
+      y += FH + 26;
+
+      // Controls: << prev · counter · next >>
+      const BW = 74, BH = 44;
+      const drawArrow = (bx: number, label: string) => {
+        const r = { x: bx, y: y + TITLE_H + 24 - pageScroll, w: BW, h: BH };
+        const hov = overScreen && inRect(px, py, r);
+        hud.fillStyle = hov ? "rgba(232,197,71,0.18)" : "rgba(232,197,71,0.07)";
+        hud.fillRect(bx, y, BW, BH);
+        hud.strokeStyle = S_ACCENT;
+        hud.lineWidth = 2;
+        hud.strokeRect(bx, y, BW, BH);
+        hud.font = `700 20px ${MONO}`;
+        hud.fillStyle = S_INK;
+        hud.textAlign = "center";
+        hud.fillText(label, bx + BW / 2, y + BH / 2 + 1);
+        return r;
+      };
+      slidePrevRect = drawArrow(FX, "<<");
+      slideNextRect = drawArrow(FX + FW - BW, ">>");
       hud.font = `500 20px ${MONO}`;
       hud.fillStyle = S_ACCENT;
-      hud.fillText("<< prev · random · next >>", HUD_W / 2, y); y += 28;
+      hud.textAlign = "center";
+      hud.fillText(n > 0 ? `${slideIdx + 1} / ${n}` : "0 / 0", HUD_W / 2, y + BH / 2 + 1);
+      y += BH + 30;
+
       hud.font = `500 15px ${MONO}`;
       hud.fillStyle = S_DIM;
-      hud.fillText("(links coming soon — the ring is currently just me)", HUD_W / 2, y); y += 48;
-
-      hud.textAlign = "left";
-      y = sectionHeader(">> guestbook", y);
-      ([
-        ["xX_websurfer_Xx", "cool site!! how do i get out of the CRT"],
-        ["mom", "very nice honey"],
-        ["[your name here]", "sign it by yelling at let's chat.exe"],
-      ] as const).forEach(([who, msg]) => {
-        hud.strokeStyle = "#3a342a";
-        hud.lineWidth = 2;
-        hud.strokeRect(60, y, HUD_W - 120, 54);
-        hud.font = `700 18px ${MONO}`;
-        hud.fillStyle = S_ACCENT;
-        hud.fillText(who, 84, y + 28);
-        hud.font = `500 18px ${MONO}`;
-        hud.fillStyle = S_INK;
-        hud.fillText(msg, 330, y + 28);
-        y += 68;
-      });
-      y += 12;
-
-      y = sectionHeader(">> site stats", y);
-      hud.font = `500 18px ${MONO}`;
-      hud.fillStyle = S_DIM;
-      hud.fillText("powered by: 1 imaginary CRT · 5,500 digits · zero divs", 104, y);
-      return y + 30;
+      hud.fillText("auto-plays · click the arrows to flip", HUD_W / 2, y);
+      return y + 24;
     }
 
     function drawPage(id: Exclude<PageId, "chat">, now: number, px: number, py: number) {
       hud.fillStyle = "#0a0806";
       hud.fillRect(0, 0, HUD_W, HUD_H);
       uselessBtnRect = null;
+      slidePrevRect = slideNextRect = null;
       hud.save();
       hud.beginPath();
       hud.rect(0, TITLE_H, HUD_W, HUD_H - TITLE_H);
@@ -2110,9 +2303,9 @@ export default function Scene3D() {
       hud.translate(0, TITLE_H + 24 - pageScroll);
       let bottom = 0;
       if (id === "about") bottom = paintAbout(now);
-      else if (id === "work") bottom = paintWork(now);
+      else if (id === "work") bottom = paintWork();
       else if (id === "projects") bottom = paintProjects(px, py);
-      else bottom = paintExtras(now);
+      else bottom = paintExtras(now, px, py);
       hud.restore();
       pageMax = Math.max(0, bottom - (HUD_H - TITLE_H - 48));
       if (pageScroll > pageMax) pageScroll = pageMax;
@@ -2325,6 +2518,17 @@ export default function Scene3D() {
       const t = (now - t0) / 1000;
       const dt = Math.min(0.05, (now - lastFrameT) / 1000);
       lastFrameT = now;
+
+      // ── Chinatown Hacks gif — hand-timed frame playback ──
+      for (const g of gifAnims) {
+        if (g.frames.length === 0) continue;
+        g.elapsed += dt * 1000;
+        const cur = g.frames[g.idx];
+        if (g.elapsed > cur.delay) {
+          g.elapsed -= cur.delay;
+          g.idx = (g.idx + 1) % g.frames.length;
+        }
+      }
 
       // ── Window walker — rolled once, 5s in ──
       if (!walkerRolled && now - t0 > WALKER_DELAY) {
