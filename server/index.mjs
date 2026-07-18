@@ -1,6 +1,8 @@
 import express from "express";
 import path from "node:path";
+import fs from "node:fs";
 import { fileURLToPath } from "node:url";
+import { fetchSpotifyTopTracks } from "./spotify.mjs";
 
 // Dedicated backend (Render Web Service):
 //  - POST /api/chat          → Groq proxy (key stays server-side, rate limited)
@@ -224,6 +226,12 @@ async function getHevy() {
 }
 
 // ─── Spotify ─────────────────────────────────────────────────
+// Playback is client-side (the visitor's browser loads Spotify's embed), so
+// the only thing the server must produce is the list of track URIs. Spotify
+// blocks datacenter IPs (Render's outbound to accounts.spotify.com times out),
+// so live fetch works locally but not on Render. A GitHub Action runs the same
+// fetch from an un-blocked runner and commits public/spotify-tracks.json; the
+// server falls back to that real snapshot when its own live call fails.
 function mockSpotify() {
   return {
     mock: true,
@@ -235,41 +243,32 @@ function mockSpotify() {
   };
 }
 
-async function getSpotify() {
-  const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_REFRESH_TOKEN } = process.env;
-  if (!SPOTIFY_CLIENT_ID || !SPOTIFY_REFRESH_TOKEN) return mockSpotify();
+const SPOTIFY_SNAPSHOT = path.join(__dirname, "..", "public", "spotify-tracks.json");
+function snapshotSpotify() {
   try {
-    const headers = { "Content-Type": "application/x-www-form-urlencoded" };
-    if (SPOTIFY_CLIENT_SECRET) {
-      headers.Authorization = "Basic " +
-        Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString("base64");
+    const j = JSON.parse(fs.readFileSync(SPOTIFY_SNAPSHOT, "utf8"));
+    if (Array.isArray(j.topTracks) && j.topTracks.length > 0) {
+      return { mock: false, source: "snapshot", updatedAt: j.updatedAt, topTracks: j.topTracks };
     }
-    const tok = await (await fetch("https://accounts.spotify.com/api/token", {
-      method: "POST",
-      headers,
-      body: new URLSearchParams({
-        grant_type: "refresh_token",
-        refresh_token: SPOTIFY_REFRESH_TOKEN,
-        client_id: SPOTIFY_CLIENT_ID,
-      }),
-    })).json();
-    if (!tok.access_token) throw new Error(tok.error_description ?? "token refresh failed");
-    const top = await (await fetch(
-      "https://api.spotify.com/v1/me/top/tracks?time_range=short_term&limit=10",
-      { headers: { Authorization: `Bearer ${tok.access_token}` } }
-    )).json();
-    return {
-      mock: false,
-      topTracks: (top.items ?? []).map(t => ({
-        id: t.id,
-        uri: t.uri, // spotify:track:… — used by the embed player
-        name: t.name,
-        artist: t.artists.map(a => a.name).join(", "),
-      })),
-    };
-  } catch (err) {
-    return { ...mockSpotify(), error: errInfo(err) };
+  } catch { /* no snapshot committed yet */ }
+  return null;
+}
+
+async function getSpotify() {
+  const hasCreds = process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_REFRESH_TOKEN;
+  if (hasCreds) {
+    try {
+      const topTracks = await fetchSpotifyTopTracks(process.env);
+      if (topTracks.length > 0) return { mock: false, source: "live", topTracks };
+    } catch (err) {
+      // Live fetch blocked (e.g. Render → Spotify ETIMEDOUT): use the snapshot
+      const snap = snapshotSpotify();
+      if (snap) return { ...snap, liveError: errInfo(err) };
+      return { ...mockSpotify(), error: errInfo(err) };
+    }
   }
+  // No creds on this host — still prefer the real snapshot over fake mocks
+  return snapshotSpotify() ?? mockSpotify();
 }
 
 // ─── Aggregate with a 1-hour cache ───────────────────────────

@@ -1,0 +1,41 @@
+name: Refresh Spotify snapshot
+
+# Spotify blocks Render's datacenter IPs, so the live server call times out.
+# GitHub's runners are un-blocked, so we refresh the track list here and commit
+# it; Render then auto-deploys the fresh snapshot. Top tracks (short_term) move
+# slowly, so daily is plenty — and the commit-only-if-changed guard means most
+# runs produce no commit and no redeploy.
+
+on:
+  schedule:
+    - cron: "0 8 * * *" # daily, 08:00 UTC
+  workflow_dispatch: {} # allow manual runs from the Actions tab
+
+permissions:
+  contents: write # needed to commit the refreshed snapshot
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20 # global fetch is built in; no npm install needed
+      - name: Fetch top tracks
+        env:
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+          SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
+        run: node scripts/fetch-spotify.mjs
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- public/spotify-tracks.json; then
+            echo "Snapshot unchanged — nothing to commit."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add public/spotify-tracks.json
+            git commit -m "chore: refresh Spotify snapshot"
+            git push
+          fi
