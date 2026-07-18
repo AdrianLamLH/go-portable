@@ -29,6 +29,19 @@ const WINDOW_TITLES: Record<PageId, string> = {
   chat: "lets_chat.exe",
 };
 
+// Extras photo-dump captions, keyed by the filename in public/gallery/.
+// Shown in a hover tooltip over the slide. Edit freely as photos change.
+const GALLERY_CAPTIONS: Record<string, string> = {
+  "photo1.jpg": "ucla class of 2024 — royce hall grad shoot",
+  "photo2.jpg": "anthropic × menlo builder day — the whole room",
+  "photo3.jpg": "borrowed a tokyo cop's honda for exactly one photo",
+  "photo4.jpg": "intro talk as a summer intern (yes, i quoted jake the dog)",
+  "photo5.jpg": "the builder day team — me, wei chun & benedict",
+  "photo6.jpg": "ucla × slalom data challenge — everybody say SMILE",
+  "photo7.jpg": "la city council commendation for the hillside streets project",
+  "photo8.png": "open mic night — eyes closed, fully committing",
+};
+
 // Screen palette — the POC's locked tokens
 const S_INK = "#ede4d3";
 const S_DIM = "#857d6e";
@@ -78,12 +91,17 @@ const KEY_ROWS: KeySpec[][] = [
 // catches phones/tablets without a mouse but not touchscreen laptops (whose
 // primary pointer reports hover: hover). The width fallback catches narrow
 // desktop windows where the room layout is cramped anyway.
-const detectMobile = () =>
-  // ?forceMobile forces the locked view on desktop, so the mobile experience
-  // can be tested without a real phone.
-  new URLSearchParams(location.search).has("forceMobile") ||
-  window.matchMedia("(pointer: coarse) and (hover: none)").matches ||
-  window.innerWidth < 768;
+const detectMobile = () => {
+  // ?forceMobile / ?forceDesktop override the auto-detect, so either
+  // experience can be tested without the matching hardware.
+  const q = new URLSearchParams(location.search);
+  if (q.has("forceDesktop")) return false;
+  return (
+    q.has("forceMobile") ||
+    window.matchMedia("(pointer: coarse) and (hover: none)").matches ||
+    window.innerWidth < 768
+  );
+};
 
 export default function Scene3D() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -454,6 +472,10 @@ export default function Scene3D() {
       img.src = url;
       return img;
     });
+    const galleryCaption = (i: number) => {
+      const base = decodeURIComponent((galleryUrls[i] ?? "").split("/").pop() ?? "");
+      return GALLERY_CAPTIONS[base] ?? "";
+    };
 
     // Animated GIFs — canvas drawImage() only ever grabs a still frame from an
     // <img>, and browsers pause GIF decoding on elements with no visible
@@ -504,27 +526,22 @@ export default function Scene3D() {
     }
     const captchaAnim = loadGifAnim("/projects/ai-proof-captcha.gif");
     const neocitiesAnim = loadGifAnim("/projects/neocities-site.gif");
-    const chinatownAnim = loadGifAnim("/projects/chinatown-hacks.gif", 720, isMobile); // 27 MB — skip on mobile
+    const chinatownAnim = loadGifAnim("/projects/chinatown-hacks.gif"); // compressed to 360px / 2.7 MB
 
-    // Cover-fit draws src into (x,y,w,h), clipped so nothing bleeds outside.
-    // sw/sh are the source's natural dimensions; pass 0 for "not ready yet".
+    // Contain-fit draws the WHOLE src into (x,y,w,h), centered and letterboxed
+    // so nothing is cropped. sw/sh are the source's natural dimensions; pass 0
+    // for "not ready yet".
     function drawThumb(
       ctx: CanvasRenderingContext2D, src: CanvasImageSource | null, sw: number, sh: number,
       x: number, y: number, w: number, h: number
     ) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(x, y, w, h);
-      ctx.clip();
+      ctx.fillStyle = "#12100c"; // letterbox backing
+      ctx.fillRect(x, y, w, h);
       if (src && sw > 0 && sh > 0) {
-        const s = Math.max(w / sw, h / sh);
+        const s = Math.min(w / sw, h / sh);
         const iw = sw * s, ih = sh * s;
         ctx.drawImage(src, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
-      } else {
-        ctx.fillStyle = "rgba(232,197,71,0.08)";
-        ctx.fillRect(x, y, w, h);
       }
-      ctx.restore();
       ctx.strokeStyle = "#3a342a";
       ctx.lineWidth = 2;
       ctx.strokeRect(x, y, w, h);
@@ -1598,16 +1615,15 @@ export default function Scene3D() {
     let openPage: PageId | null = null;
     let pageScroll = 0;
     let pageMax = 0;               // max scroll, measured from painted content
-    let uselessClicks = 0;
-    // On-screen (HUD px) rect of the projects page's useless button, refreshed
-    // every painted frame so scrolled positions stay clickable
-    let uselessBtnRect: { x: number; y: number; w: number; h: number } | null = null;
     // Extras-page slideshow — index, last auto-advance time, and the arrow
-    // hotspots (screen px, refreshed every painted frame like the button above)
+    // hotspots (screen px, refreshed every painted frame so scrolled positions
+    // stay clickable)
     let slideIdx = 0;
     let slideAt = 0;
     let slidePrevRect: { x: number; y: number; w: number; h: number } | null = null;
     let slideNextRect: { x: number; y: number; w: number; h: number } | null = null;
+    // Caption to show in a hover tooltip over the extras photo (set each frame)
+    let galleryTip: string | null = null;
 
     const TITLE_H = 56;
     const XB = { x: 14, y: 12, w: 34, h: 32 }; // close button, top-left
@@ -1621,12 +1637,10 @@ export default function Scene3D() {
       openPage = id;
       pageScroll = 0;
       pageMax = 0;
-      uselessBtnRect = null;
       setMode(id === "chat" ? "terminal" : "lattice");
     }
     function closeWindow() {
       openPage = null;
-      uselessBtnRect = null;
       setMode("lattice");
     }
     function reboot() {
@@ -1645,9 +1659,6 @@ export default function Scene3D() {
         return;
       }
       if (inRect(px, py, XB)) { closeWindow(); return; }
-      if (openPage === "projects" && uselessBtnRect && inRect(px, py, uselessBtnRect)) {
-        uselessClicks++;
-      }
       if (openPage === "extras" && galleryImgs.length > 0) {
         const n = galleryImgs.length;
         if (slidePrevRect && inRect(px, py, slidePrevRect)) {
@@ -2226,7 +2237,7 @@ export default function Scene3D() {
         },
       ];
 
-      const GAP = 16, CARD_W = (HUD_W - 120 - GAP) / 2, THUMB_H = 210, TEXT_H = 96;
+      const GAP = 16, CARD_W = (HUD_W - 120 - GAP) / 2, THUMB_H = 300, TEXT_H = 96;
       const CARD_H = THUMB_H + TEXT_H;
       hud.textAlign = "left";
       cards.forEach((p, i) => {
@@ -2249,32 +2260,6 @@ export default function Scene3D() {
       });
       const rows = Math.ceil(cards.length / 2);
       y += rows * CARD_H + (rows - 1) * GAP + 24;
-
-      // The useless button — peak flash-game interactivity
-      const bw = 320, bh = 52, bx = HUD_W / 2 - bw / 2;
-      uselessBtnRect = { x: bx, y: y + TITLE_H + 24 - pageScroll, w: bw, h: bh };
-      const hov = overScreen && inRect(px, py, uselessBtnRect);
-      hud.fillStyle = hov ? "rgba(232,197,71,0.18)" : "rgba(232,197,71,0.07)";
-      hud.fillRect(bx, y, bw, bh);
-      hud.strokeStyle = S_ACCENT;
-      hud.lineWidth = 2;
-      hud.strokeRect(bx, y, bw, bh);
-      hud.textAlign = "center";
-      hud.font = `500 20px ${MONO}`;
-      hud.fillStyle = S_INK;
-      hud.fillText(
-        uselessClicks === 0
-          ? "do not click this button"
-          : `clicked ${uselessClicks} time${uselessClicks === 1 ? "" : "s"}`,
-        HUD_W / 2, y + bh / 2 + 1
-      );
-      y += bh + 30;
-      if (uselessClicks >= 10) {
-        hud.font = `500 16px ${MONO}`;
-        hud.fillStyle = S_DIM;
-        hud.fillText("ok you can stop now", HUD_W / 2, y);
-        y += 26;
-      }
       return y + 10;
     }
 
@@ -2324,6 +2309,13 @@ export default function Scene3D() {
       hud.strokeStyle = "#3a342a";
       hud.lineWidth = 2;
       hud.strokeRect(FX, y, FW, FH);
+
+      // Hover anywhere on the photo → surface its caption as a tooltip (drawn
+      // unclipped, on top, back in drawPage). Screen rect accounts for scroll.
+      const frameScreen = { x: FX, y: y + TITLE_H + 24 - pageScroll, w: FW, h: FH };
+      if (n > 0 && overScreen && inRect(px, py, frameScreen)) {
+        galleryTip = galleryCaption(slideIdx % n);
+      }
       y += FH + 26;
 
       // Controls: << prev · counter · next >>
@@ -2359,8 +2351,8 @@ export default function Scene3D() {
     function drawPage(id: Exclude<PageId, "chat">, now: number, px: number, py: number) {
       hud.fillStyle = "#0a0806";
       hud.fillRect(0, 0, HUD_W, HUD_H);
-      uselessBtnRect = null;
       slidePrevRect = slideNextRect = null;
+      galleryTip = null;
       hud.save();
       hud.beginPath();
       hud.rect(0, TITLE_H, HUD_W, HUD_H - TITLE_H);
@@ -2383,6 +2375,28 @@ export default function Scene3D() {
         const thumbY = trackY + (trackH - thumbH) * (pageScroll / pageMax);
         hud.fillStyle = S_DIM;
         hud.fillRect(HUD_W - 18, thumbY, 10, thumbH);
+      }
+
+      // Hover tooltip (extras photo caption) — drawn last so it sits on top and
+      // isn't clipped by the page area. Positioned just below-right of the
+      // cursor, clamped to stay fully on-screen.
+      if (galleryTip) {
+        hud.font = `500 16px ${MONO}`;
+        hud.textAlign = "left";
+        hud.textBaseline = "middle";
+        const padX = 12, padY = 9, tw = hud.measureText(galleryTip).width;
+        const bw = tw + padX * 2, bh = 34;
+        let bx = px + 16, by = py + 18;
+        if (bx + bw > HUD_W - 8) bx = px - 16 - bw;
+        if (by + bh > HUD_H - 8) by = py - 18 - bh;
+        bx = Math.max(8, bx); by = Math.max(8, by);
+        hud.fillStyle = "rgba(12,10,8,0.96)";
+        hud.fillRect(bx, by, bw, bh);
+        hud.strokeStyle = S_ACCENT;
+        hud.lineWidth = 2;
+        hud.strokeRect(bx, by, bw, bh);
+        hud.fillStyle = S_INK;
+        hud.fillText(galleryTip, bx + padX, by + bh / 2 + 1);
       }
     }
 
