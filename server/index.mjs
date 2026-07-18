@@ -16,11 +16,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Node's built-in fetch reports connection-level failures as a bland
 // "TypeError: fetch failed" and hides the real reason (ENOTFOUND, ETIMEDOUT,
-// UND_ERR_CONNECT_TIMEOUT, ENETUNREACH…) in err.cause. Unwrap it.
+// UND_ERR_CONNECT_TIMEOUT, ENETUNREACH…) in err.cause. Unwrap the whole chain
+// so the failure is legible even when the top-level message is generic.
 function errInfo(err) {
-  const cause = err?.cause;
-  if (cause) return `${err}: ${cause.code ?? cause.message ?? cause}`;
-  return String(err);
+  const parts = [];
+  let e = err;
+  for (let i = 0; e && i < 4; i++) {
+    const bits = [e.name, e.code, e.errno, e.message].filter(Boolean);
+    parts.push(bits.join(" ") || String(e));
+    e = e.cause;
+  }
+  return parts.join(" <- ");
 }
 
 // ─── Groq chat proxy ─────────────────────────────────────────
@@ -267,11 +273,14 @@ async function getSpotify() {
 }
 
 // ─── Aggregate with a 1-hour cache ───────────────────────────
+// `_diag` is a build marker so a deploy can be confirmed live independent of
+// the payload; `?fresh=1` bypasses the cache for debugging.
+const DIAG = "diag2";
 let cache = { at: 0, data: null };
-app.get("/api/integrations", async (_req, res) => {
-  if (cache.data && Date.now() - cache.at < 3600_000) return res.json(cache.data);
+app.get("/api/integrations", async (req, res) => {
+  if (!req.query.fresh && cache.data && Date.now() - cache.at < 3600_000) return res.json(cache.data);
   const [calendly, hevy, spotify] = await Promise.all([getCalendly(), getHevy(), getSpotify()]);
-  cache = { at: Date.now(), data: { calendly, hevy, spotify } };
+  cache = { at: Date.now(), data: { _diag: DIAG, calendly, hevy, spotify } };
   res.json(cache.data);
 });
 
