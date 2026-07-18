@@ -1826,6 +1826,41 @@ export default function Scene3D() {
     }
     window.addEventListener("resize", onResize);
 
+    // ─── Dev-only: export the physical props to .glb for Blender ──
+    // In `npm run dev`, open the console and call exportSceneGLB(). It
+    // downloads workstation.glb — the desk, monitor, keyboard, mouse, radio,
+    // calendar and dumbbell with their exact in-scene spacing — so you can
+    // remodel the shells in Blender against the real layout. Code-only parts
+    // that stay procedural (pickPlane etc. — invisible) are skipped; the CRT
+    // screen plane and keycaps export as visible reference, delete them there.
+    // See docs/blender-remodel.md for the full round-trip.
+    if (import.meta.env.DEV) {
+      (window as any).exportSceneGLB = async () => {
+        const { GLTFExporter } = await import(
+          "three/examples/jsm/exporters/GLTFExporter.js"
+        );
+        const props = [desk, mousepad, monitor, keyboard, mouse3d, radio, calendarG, streakG];
+        new GLTFExporter().parse(
+          props,
+          (result) => {
+            const blob = new Blob([result as ArrayBuffer], { type: "model/gltf-binary" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "workstation.glb";
+            a.click();
+            URL.revokeObjectURL(a.href);
+            console.log("[dev] workstation.glb downloaded");
+          },
+          (err) => console.error("[dev] GLB export failed", err),
+          { binary: true, onlyVisible: true }
+        );
+      };
+      console.log(
+        "%c[dev] call exportSceneGLB() to download workstation.glb for Blender",
+        "color:#c99b2f;font-weight:600"
+      );
+    }
+
     // ─── HUD painting — LamOS: boot splash → desktop → windows ─
     let vignette: CanvasGradient | null = null;
     const MONO = "ui-monospace, Menlo, monospace";
