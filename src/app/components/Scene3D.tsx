@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import posterUrls from "virtual:posters";
 import galleryUrls from "virtual:gallery";
@@ -73,16 +73,33 @@ const KEY_ROWS: KeySpec[][] = [
   ],
 ];
 
+// Touch-first devices get the locked lean-in view; the full room needs
+// hover, right-click, and a keyboard. `(pointer: coarse) and (hover: none)`
+// catches phones/tablets without a mouse but not touchscreen laptops (whose
+// primary pointer reports hover: hover). The width fallback catches narrow
+// desktop windows where the room layout is cramped anyway.
+const detectMobile = () =>
+  // ?forceMobile forces the locked view on desktop, so the mobile experience
+  // can be tested without a real phone.
+  new URLSearchParams(location.search).has("forceMobile") ||
+  window.matchMedia("(pointer: coarse) and (hover: none)").matches ||
+  window.innerWidth < 768;
+
 export default function Scene3D() {
   const mountRef = useRef<HTMLDivElement>(null);
+  // Decided once per mount, mirrored into the effect — a mid-session mode
+  // switch would need state we don't want to manage.
+  const [mobileNote] = useState(detectMobile);
 
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
 
+    const isMobile = detectMobile();
+
     // ─── Renderer / camera / lights ──────────────────────────
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(0x060606, 1);
     mount.appendChild(renderer.domElement);
@@ -446,9 +463,11 @@ export default function Scene3D() {
     type GifFrame = { canvas: HTMLCanvasElement; delay: number };
     type GifAnim = { frames: GifFrame[]; idx: number; elapsed: number };
     const gifAnims: GifAnim[] = [];
-    function loadGifAnim(url: string, maxW = 720) {
+    function loadGifAnim(url: string, maxW = 720, skipFetch = false) {
       const anim: GifAnim = { frames: [], idx: 0, elapsed: 0 };
       gifAnims.push(anim);
+      // Empty frames render as the placeholder box — used to skip heavy gifs on mobile.
+      if (skipFetch) return anim;
       fetch(url)
         .then(r => r.arrayBuffer())
         .then(buf => {
@@ -485,7 +504,7 @@ export default function Scene3D() {
     }
     const captchaAnim = loadGifAnim("/projects/ai-proof-captcha.gif");
     const neocitiesAnim = loadGifAnim("/projects/neocities-site.gif");
-    const chinatownAnim = loadGifAnim("/projects/chinatown-hacks.gif");
+    const chinatownAnim = loadGifAnim("/projects/chinatown-hacks.gif", 720, isMobile); // 27 MB — skip on mobile
 
     // Cover-fit draws src into (x,y,w,h), clipped so nothing bleeds outside.
     // sw/sh are the source's natural dimensions; pass 0 for "not ready yet".
@@ -634,6 +653,7 @@ export default function Scene3D() {
     // enough that the note's top edge sits on the bezel for the tape to grab.
     postItG.position.set(2.26, 1.52, 0.36);
     postItG.rotation.z = -0.07; // taped on in a hurry
+    postItG.visible = !isMobile; // "lean in! (right-click)" is meaningless on touch
     monitor.add(postItG);
     const postIt = new THREE.Mesh(
       new THREE.PlaneGeometry(0.9, 0.9),
@@ -653,20 +673,32 @@ export default function Scene3D() {
     const CAM_BASE_POS = camera.position.clone();
     const CAM_BASE_LOOK = new THREE.Vector3(0, 0.35, 0); // matches the init lookAt
     const leanLookAt = new THREE.Vector3(0, 0, 0.04).applyMatrix4(monitor.matrixWorld);
-    const leanCamPos = leanLookAt.clone().add(
-      new THREE.Vector3(0, 0, 1).transformDirection(monitor.matrixWorld).multiplyScalar(4.2)
-    );
+    const leanNormal = new THREE.Vector3(0, 0, 1).transformDirection(monitor.matrixWorld);
+    const leanCamPos = new THREE.Vector3();
+    function computeLeanCamPos() {
+      // Desktop keeps the hand-tuned distance (fills a landscape 4:3 viewport).
+      // Mobile fits the bezel opening's width into the horizontal FOV so a
+      // portrait phone letterboxes vertically instead of overflowing sideways.
+      const vFov = THREE.MathUtils.degToRad(camera.fov);
+      const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+      const dist = isMobile
+        ? (OPEN_W / 2) * 1.08 / Math.tan(hFov / 2) // 8% margin
+        : 4.2;                                      // desktop keeps the tuned value
+      leanCamPos.copy(leanLookAt).addScaledVector(leanNormal, dist);
+    }
+    computeLeanCamPos();
     const camLook = new THREE.Vector3();
 
     // Leaning in accelerates (slow shoulders-first start, ease-in power);
     // leaning back out is a quick push-off (fast ease-out).
-    let leanOn = false;
-    let leanT = 0; // linear param; eased into a blend each frame
+    let leanOn = isMobile;        // mobile boots locked into the lean-in view
+    let leanT = isMobile ? 1 : 0; // start already leaned in — no fly-in
     const LEAN_IN_DUR = 1.4, LEAN_OUT_DUR = 0.45, LEAN_EXP = 2.6;
     const leanBlendOf = () =>
       leanOn ? Math.pow(leanT, LEAN_EXP) : 1 - Math.pow(1 - leanT, 3);
     let lastLeanToggle = 0;
     function toggleLean() {
+      if (isMobile) return; // locked leaned in — no escape (also catches iOS long-press contextmenu)
       // Debounce duplicate events from synthetic input pipelines
       const nowMs = performance.now();
       if (nowMs - lastLeanToggle < 250) return;
@@ -685,7 +717,7 @@ export default function Scene3D() {
     const sphereCamera = new THREE.PerspectiveCamera(45, 4 / 3, 0.1, 100);
     sphereCamera.position.z = 4.5;
 
-    const COUNT = 5500;
+    const COUNT = 5500; // the terminal face's head outline alone needs ~3960 particles; don't cut this
     const positions = new Float32Array(COUNT * 3);
     const originals = new Float32Array(COUNT * 3);
     const targets = new Float32Array(COUNT * 3);
@@ -1734,6 +1766,32 @@ export default function Scene3D() {
       }
     }
 
+    // ── Touch input: tap = move virtual cursor + click, drag = scroll ──
+    // Reuses the mouse handlers by translating touches into their event shape;
+    // onPointerMove derives crt.cx/cy + overScreen synchronously and onClick
+    // consumes that state, which is exactly what a real mouse does, compressed.
+    let touchStartY = 0;
+    function onTouchStart(e: TouchEvent) {
+      if (e.touches.length > 1) return; // let the browser handle pinch (nothing to zoom)
+      const t = e.touches[0];
+      touchStartY = t.clientY;
+      onPointerMove({ clientX: t.clientX, clientY: t.clientY } as MouseEvent);
+    }
+    function onTouchEnd(e: TouchEvent) {
+      if (e.touches.length > 0) return; // still fingers down (pinch) — not a tap
+      const t = e.changedTouches[0];
+      if (Math.abs(t.clientY - touchStartY) > 12) return; // it was a scroll drag
+      onPointerMove({ clientX: t.clientX, clientY: t.clientY } as MouseEvent);
+      onClick({ clientX: t.clientX, clientY: t.clientY } as MouseEvent);
+    }
+    function onTouchMove(e: TouchEvent) {
+      if (e.touches.length > 1) return; // pinch — leave it to the browser
+      const t = e.touches[0];
+      onWheel({ deltaY: touchStartY - t.clientY } as WheelEvent); // drag up = scroll down
+      touchStartY = t.clientY;
+      e.preventDefault(); // stop rubber-banding the page
+    }
+
     window.addEventListener("mousemove", onPointerMove);
     window.addEventListener("click", onClick);
     window.addEventListener("wheel", onWheel, { passive: true });
@@ -1742,11 +1800,18 @@ export default function Scene3D() {
     window.addEventListener("contextmenu", onContextMenu);
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
+    if (isMobile) {
+      window.addEventListener("touchstart", onTouchStart, { passive: true });
+      window.addEventListener("touchend", onTouchEnd);
+      window.addEventListener("touchmove", onTouchMove, { passive: false });
+    }
 
     function onResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      // Reframe the locked lean after orientation change / iOS toolbar collapse.
+      computeLeanCamPos();
     }
     window.addEventListener("resize", onResize);
 
@@ -2481,8 +2546,9 @@ export default function Scene3D() {
       }
 
       // Cursor arrow — only while the pointer is actually on the screen;
-      // off-screen the visible OS hand cursor takes over.
-      if (overScreen) {
+      // off-screen the visible OS hand cursor takes over. Skipped on touch:
+      // a parked fake cursor with no hover just looks like a dead pixel.
+      if (overScreen && !isMobile) {
         const px = crt.cx / 100 * HUD_W;
         const py = crt.cy / 100 * HUD_H;
         hud.save();
@@ -2761,6 +2827,9 @@ export default function Scene3D() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchmove", onTouchMove);
       renderer.dispose();
       particleRT.dispose();
       screenRT.dispose();
@@ -2768,5 +2837,38 @@ export default function Scene3D() {
     };
   }, []);
 
-  return <div ref={mountRef} className="fixed inset-0 overflow-hidden" style={{ cursor: "none", userSelect: "none" }} />;
+  return (
+    <>
+      <div
+        ref={mountRef}
+        className="fixed inset-0 overflow-hidden"
+        style={{
+          cursor: mobileNote ? "auto" : "none",
+          userSelect: "none",
+          // Kills iOS double-tap zoom / 300 ms delay without blocking our handlers.
+          touchAction: "manipulation",
+        }}
+      />
+      {mobileNote && (
+        <div
+          style={{
+            position: "fixed",
+            left: "50%",
+            bottom: "max(18px, env(safe-area-inset-bottom))",
+            transform: "translateX(-50%) rotate(-1deg)",
+            background: "#f2df6d",
+            color: "#2b2417",
+            padding: "10px 16px",
+            font: "600 13px ui-monospace, Menlo, monospace",
+            boxShadow: "0 4px 14px rgba(0,0,0,.45)",
+            maxWidth: "88vw",
+            textAlign: "center",
+            pointerEvents: "none",
+          }}
+        >
+          you&apos;re peeking through the window — open on a laptop for the full room ✦
+        </div>
+      )}
+    </>
+  );
 }
