@@ -14,6 +14,15 @@ app.use(express.json({ limit: "32kb" }));
 const PORT = process.env.PORT || 3001;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Node's built-in fetch reports connection-level failures as a bland
+// "TypeError: fetch failed" and hides the real reason (ENOTFOUND, ETIMEDOUT,
+// UND_ERR_CONNECT_TIMEOUT, ENETUNREACH…) in err.cause. Unwrap it.
+function errInfo(err) {
+  const cause = err?.cause;
+  if (cause) return `${err}: ${cause.code ?? cause.message ?? cause}`;
+  return String(err);
+}
+
 // ─── Groq chat proxy ─────────────────────────────────────────
 const PERSONA_PROMPT = [
   "You are ADRIAN.EXE — the digital avatar of Lorn Hin Adrian Lam, speaking in first person as Adrian on his personal site. Persona facts:",
@@ -72,7 +81,7 @@ app.post("/api/chat", async (req, res) => {
     const data = await r.json();
     res.status(r.status).json(data);
   } catch (err) {
-    res.status(502).json({ error: String(err) });
+    res.status(502).json({ error: errInfo(err) });
   }
 });
 
@@ -148,7 +157,7 @@ async function getCalendly() {
       bookUrl: et.scheduling_url,
     };
   } catch (err) {
-    return { ...mockCalendly(), error: String(err) };
+    return { ...mockCalendly(), error: errInfo(err) };
   }
 }
 
@@ -204,7 +213,7 @@ async function getHevy() {
       lastWorkout: last ? { title: last.title, date: last.start_time, volumeKg: Math.round(volumeKg) } : null,
     };
   } catch (err) {
-    return { ...mockHevy(), error: String(err) };
+    return { ...mockHevy(), error: errInfo(err) };
   }
 }
 
@@ -253,7 +262,7 @@ async function getSpotify() {
       })),
     };
   } catch (err) {
-    return { ...mockSpotify(), error: String(err) };
+    return { ...mockSpotify(), error: errInfo(err) };
   }
 }
 
