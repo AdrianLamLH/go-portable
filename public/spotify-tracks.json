@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-20T10:50:28.569Z",
+  "updatedAt": "2026-07-21T10:24:35.707Z",
   "topTracks": [
     {
       "id": "2Rbkkd9pKlLtBOhsp5NmSI",
@@ -14,6 +14,12 @@
       "artist": "Steve Lacy"
     },
     {
+      "id": "0zprBQpAaNFdV82NqjyiNx",
+      "uri": "spotify:track:0zprBQpAaNFdV82NqjyiNx",
+      "name": "is it cool? (feat. SZA)",
+      "artist": "Steve Lacy, SZA"
+    },
+    {
       "id": "52m9ZMBCf6tv5ONxr81Uv0",
       "uri": "spotify:track:52m9ZMBCf6tv5ONxr81Uv0",
       "name": "Reputation (feat. Dominic Fike)",
@@ -24,6 +30,12 @@
       "uri": "spotify:track:3sK8wGT43QFpWrvNQsrQya",
       "name": "DtMF",
       "artist": "Bad Bunny"
+    },
+    {
+      "id": "3LtlQb74pLqC5KsllxIXoV",
+      "uri": "spotify:track:3LtlQb74pLqC5KsllxIXoV",
+      "name": "The Medium",
+      "artist": "Toro y Moi, Unknown Mortal Orchestra"
     },
     {
       "id": "5zONmR5o52uuVQmK1VY2eN",
@@ -38,28 +50,16 @@
       "artist": "Mazzy Star"
     },
     {
-      "id": "0zprBQpAaNFdV82NqjyiNx",
-      "uri": "spotify:track:0zprBQpAaNFdV82NqjyiNx",
-      "name": "is it cool? (feat. SZA)",
-      "artist": "Steve Lacy, SZA"
+      "id": "5kaXbTDNmB14gIqDrI0sVX",
+      "uri": "spotify:track:5kaXbTDNmB14gIqDrI0sVX",
+      "name": "Saturday Night",
+      "artist": "Ravyn Lenae"
     },
     {
-      "id": "2R0rmfVCNI8jLwm0yUwDJ4",
-      "uri": "spotify:track:2R0rmfVCNI8jLwm0yUwDJ4",
-      "name": "camel blue",
-      "artist": "pineappledarrell"
-    },
-    {
-      "id": "0qWoOHqTirzo59FQ9eoECH",
-      "uri": "spotify:track:0qWoOHqTirzo59FQ9eoECH",
-      "name": "All I Did Was Dream of You (feat. The Marías)",
-      "artist": "beabadoobee, The Marías"
-    },
-    {
-      "id": "7yQkofYUm1SvBJ1dmzeJlI",
-      "uri": "spotify:track:7yQkofYUm1SvBJ1dmzeJlI",
-      "name": "silent snow",
-      "artist": "Masahiro Tokuda"
+      "id": "0XZ2XxO2rfGIhcDWqj2riz",
+      "uri": "spotify:track:0XZ2XxO2rfGIhcDWqj2riz",
+      "name": "Bobby",
+      "artist": "Ravyn Lenae"
     }
   ]
 }
