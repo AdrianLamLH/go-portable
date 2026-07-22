@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-21T10:24:35.707Z",
+  "updatedAt": "2026-07-22T10:23:58.671Z",
   "topTracks": [
     {
       "id": "2Rbkkd9pKlLtBOhsp5NmSI",
@@ -32,12 +32,6 @@
       "artist": "Bad Bunny"
     },
     {
-      "id": "3LtlQb74pLqC5KsllxIXoV",
-      "uri": "spotify:track:3LtlQb74pLqC5KsllxIXoV",
-      "name": "The Medium",
-      "artist": "Toro y Moi, Unknown Mortal Orchestra"
-    },
-    {
       "id": "5zONmR5o52uuVQmK1VY2eN",
       "uri": "spotify:track:5zONmR5o52uuVQmK1VY2eN",
       "name": "AIRWAVES",
@@ -54,6 +48,12 @@
       "uri": "spotify:track:5kaXbTDNmB14gIqDrI0sVX",
       "name": "Saturday Night",
       "artist": "Ravyn Lenae"
+    },
+    {
+      "id": "3rhgTxmFHqPYOBq9xzcyUT",
+      "uri": "spotify:track:3rhgTxmFHqPYOBq9xzcyUT",
+      "name": "Tear",
+      "artist": "Rich Brian"
     },
     {
       "id": "0XZ2XxO2rfGIhcDWqj2riz",
