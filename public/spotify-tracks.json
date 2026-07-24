@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-23T10:21:38.660Z",
+  "updatedAt": "2026-07-24T10:15:01.310Z",
   "topTracks": [
     {
       "id": "2Rbkkd9pKlLtBOhsp5NmSI",
@@ -32,6 +32,12 @@
       "artist": "Bad Bunny"
     },
     {
+      "id": "3LtlQb74pLqC5KsllxIXoV",
+      "uri": "spotify:track:3LtlQb74pLqC5KsllxIXoV",
+      "name": "The Medium",
+      "artist": "Toro y Moi, Unknown Mortal Orchestra"
+    },
+    {
       "id": "5zONmR5o52uuVQmK1VY2eN",
       "uri": "spotify:track:5zONmR5o52uuVQmK1VY2eN",
       "name": "AIRWAVES",
@@ -50,16 +56,10 @@
       "artist": "Ravyn Lenae"
     },
     {
-      "id": "3rhgTxmFHqPYOBq9xzcyUT",
-      "uri": "spotify:track:3rhgTxmFHqPYOBq9xzcyUT",
-      "name": "Tear",
-      "artist": "Rich Brian"
-    },
-    {
-      "id": "7yQkofYUm1SvBJ1dmzeJlI",
-      "uri": "spotify:track:7yQkofYUm1SvBJ1dmzeJlI",
-      "name": "silent snow",
-      "artist": "Masahiro Tokuda"
+      "id": "6r91l350cidymaEMcKceGc",
+      "uri": "spotify:track:6r91l350cidymaEMcKceGc",
+      "name": "Endless Sundays",
+      "artist": "Liang Lawrence"
     }
   ]
 }
