@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-28T10:33:11.179Z",
+  "updatedAt": "2026-07-29T10:37:07.509Z",
   "topTracks": [
     {
       "id": "2Rbkkd9pKlLtBOhsp5NmSI",
@@ -8,16 +8,16 @@
       "artist": "Phoebe Bridgers"
     },
     {
-      "id": "1OWBh1eVxUdA1Z6UA8r4nh",
-      "uri": "spotify:track:1OWBh1eVxUdA1Z6UA8r4nh",
-      "name": "the feeling",
-      "artist": "Steve Lacy"
-    },
-    {
       "id": "0zprBQpAaNFdV82NqjyiNx",
       "uri": "spotify:track:0zprBQpAaNFdV82NqjyiNx",
       "name": "is it cool? (feat. SZA)",
       "artist": "Steve Lacy, SZA"
+    },
+    {
+      "id": "1OWBh1eVxUdA1Z6UA8r4nh",
+      "uri": "spotify:track:1OWBh1eVxUdA1Z6UA8r4nh",
+      "name": "the feeling",
+      "artist": "Steve Lacy"
     },
     {
       "id": "3rhgTxmFHqPYOBq9xzcyUT",
