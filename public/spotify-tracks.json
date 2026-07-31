@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-29T10:37:07.509Z",
+  "updatedAt": "2026-07-31T10:37:12.030Z",
   "topTracks": [
     {
       "id": "2Rbkkd9pKlLtBOhsp5NmSI",
@@ -32,6 +32,12 @@
       "artist": "Masahiro Tokuda"
     },
     {
+      "id": "6jfiwkcwt8iYCdkbLukxeI",
+      "uri": "spotify:track:6jfiwkcwt8iYCdkbLukxeI",
+      "name": "maggots for brains",
+      "artist": "Olivia Rodrigo"
+    },
+    {
       "id": "3LtlQb74pLqC5KsllxIXoV",
       "uri": "spotify:track:3LtlQb74pLqC5KsllxIXoV",
       "name": "The Medium",
@@ -44,21 +50,15 @@
       "artist": "KIDDIGGS, Abe the Kid"
     },
     {
+      "id": "69ImxLhTWjSRBl2nGspu9C",
+      "uri": "spotify:track:69ImxLhTWjSRBl2nGspu9C",
+      "name": "『欲』",
+      "artist": "Yuki Hayashi"
+    },
+    {
       "id": "5kaXbTDNmB14gIqDrI0sVX",
       "uri": "spotify:track:5kaXbTDNmB14gIqDrI0sVX",
       "name": "Saturday Night",
-      "artist": "Ravyn Lenae"
-    },
-    {
-      "id": "6r91l350cidymaEMcKceGc",
-      "uri": "spotify:track:6r91l350cidymaEMcKceGc",
-      "name": "Endless Sundays",
-      "artist": "Liang Lawrence"
-    },
-    {
-      "id": "0XZ2XxO2rfGIhcDWqj2riz",
-      "uri": "spotify:track:0XZ2XxO2rfGIhcDWqj2riz",
-      "name": "Bobby",
       "artist": "Ravyn Lenae"
     }
   ]
