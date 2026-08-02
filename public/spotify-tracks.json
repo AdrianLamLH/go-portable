@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-01T09:57:01.915Z",
+  "updatedAt": "2026-08-02T09:55:03.724Z",
   "topTracks": [
     {
       "id": "2Rbkkd9pKlLtBOhsp5NmSI",
@@ -12,6 +12,12 @@
       "uri": "spotify:track:1OWBh1eVxUdA1Z6UA8r4nh",
       "name": "the feeling",
       "artist": "Steve Lacy"
+    },
+    {
+      "id": "0eAuGrXyGFYwur9ARUe7LJ",
+      "uri": "spotify:track:0eAuGrXyGFYwur9ARUe7LJ",
+      "name": "Earrings",
+      "artist": "Malcolm Todd"
     },
     {
       "id": "0zprBQpAaNFdV82NqjyiNx",
@@ -36,12 +42,6 @@
       "uri": "spotify:track:7yQkofYUm1SvBJ1dmzeJlI",
       "name": "silent snow",
       "artist": "Masahiro Tokuda"
-    },
-    {
-      "id": "0eAuGrXyGFYwur9ARUe7LJ",
-      "uri": "spotify:track:0eAuGrXyGFYwur9ARUe7LJ",
-      "name": "Earrings",
-      "artist": "Malcolm Todd"
     },
     {
       "id": "6jfiwkcwt8iYCdkbLukxeI",
