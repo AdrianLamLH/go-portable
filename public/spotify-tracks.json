@@ -1,11 +1,17 @@
 {
-  "updatedAt": "2026-08-02T09:55:03.724Z",
+  "updatedAt": "2026-08-03T11:20:38.187Z",
   "topTracks": [
     {
       "id": "2Rbkkd9pKlLtBOhsp5NmSI",
       "uri": "spotify:track:2Rbkkd9pKlLtBOhsp5NmSI",
       "name": "Lost Boys",
       "artist": "Phoebe Bridgers"
+    },
+    {
+      "id": "2zVJXqtPeqcKJXZUFEZKrY",
+      "uri": "spotify:track:2zVJXqtPeqcKJXZUFEZKrY",
+      "name": "I'll Let You Finish",
+      "artist": "Finn Wolfhard"
     },
     {
       "id": "1OWBh1eVxUdA1Z6UA8r4nh",
@@ -24,12 +30,6 @@
       "uri": "spotify:track:0zprBQpAaNFdV82NqjyiNx",
       "name": "is it cool? (feat. SZA)",
       "artist": "Steve Lacy, SZA"
-    },
-    {
-      "id": "2zVJXqtPeqcKJXZUFEZKrY",
-      "uri": "spotify:track:2zVJXqtPeqcKJXZUFEZKrY",
-      "name": "I'll Let You Finish",
-      "artist": "Finn Wolfhard"
     },
     {
       "id": "3rhgTxmFHqPYOBq9xzcyUT",
