@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-03T11:20:38.187Z",
+  "updatedAt": "2026-08-04T10:36:37.876Z",
   "topTracks": [
     {
       "id": "2Rbkkd9pKlLtBOhsp5NmSI",
@@ -14,6 +14,12 @@
       "artist": "Finn Wolfhard"
     },
     {
+      "id": "0zprBQpAaNFdV82NqjyiNx",
+      "uri": "spotify:track:0zprBQpAaNFdV82NqjyiNx",
+      "name": "is it cool? (feat. SZA)",
+      "artist": "Steve Lacy, SZA"
+    },
+    {
       "id": "1OWBh1eVxUdA1Z6UA8r4nh",
       "uri": "spotify:track:1OWBh1eVxUdA1Z6UA8r4nh",
       "name": "the feeling",
@@ -26,10 +32,10 @@
       "artist": "Malcolm Todd"
     },
     {
-      "id": "0zprBQpAaNFdV82NqjyiNx",
-      "uri": "spotify:track:0zprBQpAaNFdV82NqjyiNx",
-      "name": "is it cool? (feat. SZA)",
-      "artist": "Steve Lacy, SZA"
+      "id": "3iy2QuCtCzpWnR6tia39AB",
+      "uri": "spotify:track:3iy2QuCtCzpWnR6tia39AB",
+      "name": "hate that i made you love me",
+      "artist": "Ariana Grande"
     },
     {
       "id": "3rhgTxmFHqPYOBq9xzcyUT",
@@ -50,16 +56,10 @@
       "artist": "Olivia Rodrigo"
     },
     {
-      "id": "3LtlQb74pLqC5KsllxIXoV",
-      "uri": "spotify:track:3LtlQb74pLqC5KsllxIXoV",
-      "name": "The Medium",
-      "artist": "Toro y Moi, Unknown Mortal Orchestra"
-    },
-    {
-      "id": "5zONmR5o52uuVQmK1VY2eN",
-      "uri": "spotify:track:5zONmR5o52uuVQmK1VY2eN",
-      "name": "AIRWAVES",
-      "artist": "KIDDIGGS, Abe the Kid"
+      "id": "0lok0VDJn0zRvHLBCITSSw",
+      "uri": "spotify:track:0lok0VDJn0zRvHLBCITSSw",
+      "name": "kiss me",
+      "artist": "Ariana Grande"
     }
   ]
 }
