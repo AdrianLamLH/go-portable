@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-05T10:32:48.241Z",
+  "updatedAt": "2026-08-07T08:57:21.515Z",
   "topTracks": [
     {
       "id": "2Rbkkd9pKlLtBOhsp5NmSI",
@@ -14,16 +14,22 @@
       "artist": "Finn Wolfhard"
     },
     {
-      "id": "0eAuGrXyGFYwur9ARUe7LJ",
-      "uri": "spotify:track:0eAuGrXyGFYwur9ARUe7LJ",
-      "name": "Earrings",
-      "artist": "Malcolm Todd"
+      "id": "0lok0VDJn0zRvHLBCITSSw",
+      "uri": "spotify:track:0lok0VDJn0zRvHLBCITSSw",
+      "name": "kiss me",
+      "artist": "Ariana Grande"
     },
     {
       "id": "3iy2QuCtCzpWnR6tia39AB",
       "uri": "spotify:track:3iy2QuCtCzpWnR6tia39AB",
       "name": "hate that i made you love me",
       "artist": "Ariana Grande"
+    },
+    {
+      "id": "0eAuGrXyGFYwur9ARUe7LJ",
+      "uri": "spotify:track:0eAuGrXyGFYwur9ARUe7LJ",
+      "name": "Earrings",
+      "artist": "Malcolm Todd"
     },
     {
       "id": "3rhgTxmFHqPYOBq9xzcyUT",
@@ -36,12 +42,6 @@
       "uri": "spotify:track:7yQkofYUm1SvBJ1dmzeJlI",
       "name": "silent snow",
       "artist": "Masahiro Tokuda"
-    },
-    {
-      "id": "0lok0VDJn0zRvHLBCITSSw",
-      "uri": "spotify:track:0lok0VDJn0zRvHLBCITSSw",
-      "name": "kiss me",
-      "artist": "Ariana Grande"
     },
     {
       "id": "3LtlQb74pLqC5KsllxIXoV",
