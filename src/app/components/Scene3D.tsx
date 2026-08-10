@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import posterUrls from "virtual:posters";
 import galleryUrls from "virtual:gallery";
-import { parseGIF, decompressFrames } from "gifuct-js";
+import { parseGIF, decompressFrame } from "gifuct-js";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass.js";
 
 // Full 3D-polygon rendition of the workstation: CRT monitor, keyboard and
 // mouse are low-poly meshes with flat lambert shading and dark edge outlines.
@@ -485,6 +488,7 @@ export default function Scene3D() {
     type GifFrame = { canvas: HTMLCanvasElement; delay: number };
     type GifAnim = { frames: GifFrame[]; idx: number; elapsed: number };
     const gifAnims: GifAnim[] = [];
+    let disposed = false; // stops sliced gif decoding after unmount
     function loadGifAnim(url: string, maxW = 720, skipFetch = false) {
       const anim: GifAnim = { frames: [], idx: 0, elapsed: 0 };
       gifAnims.push(anim);
@@ -493,8 +497,14 @@ export default function Scene3D() {
       fetch(url)
         .then(r => r.arrayBuffer())
         .then(buf => {
+          // Decoding every frame in one go blocks the main thread for seconds
+          // on big gifs (the 27 MB one: ~1.3s of LZW alone + compositing) and
+          // froze the whole scene on load. Instead: parse the structure (fast),
+          // then decompress + composite frames in ≤12ms time slices, yielding
+          // between slices so the render loop keeps its frame rate. Frames
+          // append progressively — playback starts as soon as the first lands.
           const gif = parseGIF(buf);
-          const frames = decompressFrames(gif, true);
+          const raw = (gif.frames as any[]).filter((f) => f.image);
           const W = gif.lsd.width, H = gif.lsd.height;
           const s = Math.min(1, maxW / W);
           const SW = Math.round(W * s), SH = Math.round(H * s);
@@ -502,24 +512,31 @@ export default function Scene3D() {
           work.width = W; work.height = H;
           const wctx = work.getContext("2d")!;
           let prevSnapshot: ImageData | null = null;
-          const out: GifFrame[] = [];
-          for (const f of frames) {
-            if (f.disposalType === 2) wctx.clearRect(0, 0, W, H);
-            else if (f.disposalType === 3 && prevSnapshot) wctx.putImageData(prevSnapshot, 0, 0);
-            if (f.disposalType === 3) prevSnapshot = wctx.getImageData(0, 0, W, H);
-            const patch = document.createElement("canvas");
-            patch.width = f.dims.width; patch.height = f.dims.height;
-            const pctx = patch.getContext("2d")!;
-            const patchData = pctx.createImageData(f.dims.width, f.dims.height);
-            patchData.data.set(f.patch);
-            pctx.putImageData(patchData, 0, 0);
-            wctx.drawImage(patch, f.dims.left, f.dims.top);
-            const snap = document.createElement("canvas");
-            snap.width = SW; snap.height = SH;
-            snap.getContext("2d")!.drawImage(work, 0, 0, SW, SH);
-            out.push({ canvas: snap, delay: Math.max(20, f.delay) });
-          }
-          anim.frames = out;
+          let i = 0;
+          const step = () => {
+            if (disposed) return; // component unmounted mid-decode
+            const t0 = performance.now();
+            while (i < raw.length && performance.now() - t0 < 12) {
+              const f = decompressFrame(raw[i], gif.gct, true)!;
+              if (f.disposalType === 2) wctx.clearRect(0, 0, W, H);
+              else if (f.disposalType === 3 && prevSnapshot) wctx.putImageData(prevSnapshot, 0, 0);
+              if (f.disposalType === 3) prevSnapshot = wctx.getImageData(0, 0, W, H);
+              const patch = document.createElement("canvas");
+              patch.width = f.dims.width; patch.height = f.dims.height;
+              const pctx = patch.getContext("2d")!;
+              const patchData = pctx.createImageData(f.dims.width, f.dims.height);
+              patchData.data.set(f.patch);
+              pctx.putImageData(patchData, 0, 0);
+              wctx.drawImage(patch, f.dims.left, f.dims.top);
+              const snap = document.createElement("canvas");
+              snap.width = SW; snap.height = SH;
+              snap.getContext("2d")!.drawImage(work, 0, 0, SW, SH);
+              anim.frames.push({ canvas: snap, delay: Math.max(20, f.delay) });
+              i++;
+            }
+            if (i < raw.length) setTimeout(step, 0);
+          };
+          step();
         })
         .catch(() => { /* thumb just stays a placeholder box */ });
       return anim;
@@ -1685,6 +1702,21 @@ export default function Scene3D() {
 
     let overScreen = true;
 
+    // Physical props that get a hover outline (the interactable ones), plus the
+    // occluders in front of them — so a hover only counts when an interactable
+    // is the front-most thing under the cursor, not seen through the desk.
+    const interactables: THREE.Object3D[] = [radio, calendarG, powerButton];
+    const hoverTargets: THREE.Object3D[] = [desk, mousepad, keyboard, mouse3d, monitor, radio, calendarG, streakG];
+    let hovered: THREE.Object3D | null = null;
+
+    // Hand-modeled button replacements (from the shell auto-loader below).
+    // When present they're attached to their prop group and pressed by offset
+    // from the procedural button's animation, whose meshes stay as drivers.
+    let extPowerBtn: THREE.Object3D | null = null;
+    let extPowerBase: THREE.Vector3 | null = null;
+    let extRadioBtn: THREE.Object3D | null = null;
+    let extRadioBase: THREE.Vector3 | null = null;
+
     function onPointerMove(e: MouseEvent) {
       pointerVP.x = e.clientX / window.innerWidth;
       pointerVP.y = e.clientY / window.innerHeight;
@@ -1705,6 +1737,11 @@ export default function Scene3D() {
         overScreen = false;
       }
       if (!screenOn) overScreen = false; // dark screen: nothing to point at
+      // Hover outline: only when an interactable is the front-most hit (so
+      // hovering the desk in front of the radio doesn't light it up through it).
+      const hHits = raycaster.intersectObjects(hoverTargets, true);
+      const front = hHits.find(h => h.object !== pickPlane && h.object.visible && (h.object as THREE.Mesh).isMesh)?.object;
+      hovered = front ? (interactables.find(it => isWithin(front, it)) ?? null) : null;
       mount.style.cursor = overScreen ? "none" : "pointer";
     }
 
@@ -1727,7 +1764,7 @@ export default function Scene3D() {
       // otherwise swallows every click before it can reach the radio.
       const first = hits.find(h => h.object !== pickPlane && (h.object as THREE.Mesh).isMesh && h.object.visible)?.object;
       if (first) {
-        if (isWithin(first, powerButton)) {
+        if (isWithin(first, powerButton) || (extPowerBtn && isWithin(first, extPowerBtn))) {
           screenOn = !screenOn;
           if (screenOn) reboot(); // powering back on re-runs the LamOS splash
           return;
@@ -1817,10 +1854,28 @@ export default function Scene3D() {
       window.addEventListener("touchmove", onTouchMove, { passive: false });
     }
 
+    // ─── Hover outline — glowing ink contour on interactable props ──
+    // Life-is-Strange-style "you can touch this" highlight. Screen-space, so it
+    // works on the boxy geometry; a gentle pulse keeps it feeling alive.
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const outlinePass = new OutlinePass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight), scene, camera
+    );
+    outlinePass.edgeStrength = 3;
+    outlinePass.edgeThickness = 1;
+    outlinePass.edgeGlow = 0.12;
+    outlinePass.pulsePeriod = 2.2;
+    outlinePass.visibleEdgeColor.set("#ffffff");
+    outlinePass.hiddenEdgeColor.set("#777777");
+    composer.addPass(outlinePass);
+
     function onResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
+      outlinePass.setSize(window.innerWidth, window.innerHeight);
       // Reframe the locked lean after orientation change / iOS toolbar collapse.
       computeLeanCamPos();
     }
@@ -1859,6 +1914,144 @@ export default function Scene3D() {
         "%c[dev] call exportSceneGLB() to download workstation.glb for Blender",
         "color:#c99b2f;font-weight:600"
       );
+    }
+
+    // ─── Hand-modeled shell auto-loader ──────────────────────
+    // Any .glb dropped into public/models/ under the expected names (see its
+    // README) replaces its procedural shell; a missing or invalid file
+    // silently leaves the procedural one in place. Sub-objects named
+    // power-button / radio-button / readout are re-bound to their behavior.
+    {
+      const findNamed = (root: THREE.Object3D, re: RegExp): THREE.Object3D | null => {
+        let found: THREE.Object3D | null = null;
+        root.traverse((o) => { if (!found && re.test(o.name)) found = o; });
+        return found;
+      };
+      // GLB materials arrive as glossy PBR — flatten to Lambert + ink edges so
+      // loaded shells match the scene. 24°: only crease edges get outlined,
+      // not every triangle of a beveled surface.
+      const stylize = (root: THREE.Object3D) => {
+        const meshes: THREE.Mesh[] = [];
+        root.traverse((o) => { if ((o as THREE.Mesh).isMesh) meshes.push(o as THREE.Mesh); });
+        for (const m of meshes) {
+          const conv = (mat: THREE.Material) => {
+            const src = mat as THREE.MeshStandardMaterial;
+            return new THREE.MeshLambertMaterial({
+              color: src.color ? src.color.clone() : new THREE.Color(CREAM),
+              map: src.map ?? null,
+            });
+          };
+          m.material = Array.isArray(m.material) ? m.material.map(conv) : conv(m.material);
+          m.castShadow = true;
+          m.receiveShadow = true;
+          m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry as THREE.BufferGeometry, 24), edgeMat));
+        }
+      };
+      // Shells export in world space (Blender bakes the group transform when
+      // only the mesh is selected) — re-express them in the prop group's local
+      // space so the group's transform isn't applied twice, and so the shell
+      // inherits raycast targeting + any future group moves.
+      const mountShell = (root: THREE.Object3D, group: THREE.Object3D, hide: THREE.Object3D[]) => {
+        group.updateWorldMatrix(true, false);
+        root.applyMatrix4(group.matrixWorld.clone().invert());
+        stylize(root);
+        for (const h of hide) h.visible = false;
+        group.add(root);
+      };
+      // desk/mousepad are plain meshes, not groups: the replacement becomes a
+      // child, so blank the look (material + edge twins) instead of hiding the
+      // object — a hidden parent would hide the replacement too, and the mesh
+      // must stay raycastable as a click occluder.
+      const blankMesh = (m: THREE.Mesh) => {
+        for (const mat of Array.isArray(m.material) ? m.material : [m.material]) mat.visible = false;
+        for (const c of m.children) c.visible = false;
+      };
+      type ShellSwap = {
+        file: string;
+        group: THREE.Object3D;
+        hide: () => THREE.Object3D[];
+        after?: (root: THREE.Object3D) => void;
+      };
+      const shellSwaps: ShellSwap[] = [
+        {
+          file: "monitor-shell.glb", group: monitor,
+          hide: () => [body, topBar, botBar, leftBar, rightBar, neck, foot],
+          after: (root) => {
+            const btn = findNamed(root, /power/i);
+            if (btn) {
+              powerButton.visible = false; // stays as the invisible animation driver
+              monitor.attach(btn); // keeps world transform; local space = group space
+              extPowerBtn = btn;
+              extPowerBase = btn.position.clone();
+              interactables.push(btn);
+            }
+          },
+        },
+        { file: "keyboard-base.glb", group: keyboard, hide: () => [kbBase] },
+        { file: "mouse-shell.glb", group: mouse3d, hide: () => [mouseBody, btnL, btnR, wheel] },
+        {
+          file: "radio-shell.glb", group: radio,
+          hide: () => radio.children.filter((o) => (o as THREE.Mesh).isMesh && o !== radioPanel && o !== radioButton),
+          after: (root) => {
+            const btn = findNamed(root, /button/i);
+            if (btn) {
+              radioButton.visible = false;
+              radio.attach(btn);
+              extRadioBtn = btn;
+              extRadioBase = btn.position.clone();
+            }
+            const face = findNamed(root, /readout/i) as THREE.Mesh | null;
+            if (face?.isMesh) { face.material = radioPanelMat; radioPanel.visible = false; }
+          },
+        },
+        { file: "calendar-shell.glb", group: calendarG, hide: () => [capR, capL, calBase] },
+        {
+          file: "streak-shell.glb", group: streakG, hide: () => [streakBody],
+          after: (root) => {
+            // A face named "readout" becomes the live display; otherwise a
+            // plane goes where the procedural front face was.
+            const face = findNamed(root, /readout/i) as THREE.Mesh | null;
+            if (face?.isMesh) { face.material = new THREE.MeshBasicMaterial({ map: streakTex }); return; }
+            const plane = new THREE.Mesh(
+              new THREE.PlaneGeometry(0.95, 0.55),
+              new THREE.MeshBasicMaterial({ map: streakTex })
+            );
+            plane.position.copy(streakBody.position);
+            plane.rotation.copy(streakBody.rotation);
+            plane.translateZ(0.091);
+            streakG.add(plane);
+          },
+        },
+        { file: "dumbbell.glb", group: dbG, hide: () => [...dbG.children] },
+        { file: "desk.glb", group: desk, hide: () => { blankMesh(desk); return []; } },
+        { file: "mousepad.glb", group: mousepad, hide: () => { blankMesh(mousepad); return []; } },
+      ];
+      void (async () => {
+        const loaded: string[] = [];
+        let loader: any = null;
+        for (const s of shellSwaps) {
+          try {
+            const res = await fetch(`/models/${s.file}`);
+            if (!res.ok) continue;
+            const buf = await res.arrayBuffer();
+            // The SPA server answers missing files with 200 + index.html —
+            // require the binary-glTF magic bytes before parsing.
+            if (buf.byteLength < 12 || new DataView(buf).getUint32(0, true) !== 0x46546c67) continue;
+            if (!loader) {
+              const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
+              loader = new GLTFLoader();
+            }
+            const gltf = await loader.parseAsync(buf, "/models/");
+            mountShell(gltf.scene, s.group, s.hide());
+            s.after?.(gltf.scene);
+            loaded.push(s.file);
+          } catch (err) {
+            console.warn(`[models] ${s.file} failed to load — procedural shell kept`, err);
+          }
+        }
+        if (loaded.length) console.log(`[models] swapped in: ${loaded.join(", ")}`);
+        else if (import.meta.env.DEV) console.log("[models] no .glb shells in public/models/ — all procedural");
+      })();
     }
 
     // ─── HUD painting — LamOS: boot splash → desktop → windows ─
@@ -2787,10 +2980,14 @@ export default function Scene3D() {
       // Radio button: sinks into the side while playing, pops back out when paused
       const btnTargetX = radioPlaying ? RADIO_BTN_IN : RADIO_BTN_OUT;
       radioButton.position.x += (btnTargetX - radioButton.position.x) * 0.25;
+      if (extRadioBtn && extRadioBase)
+        extRadioBtn.position.x = extRadioBase.x + (radioButton.position.x - RADIO_BTN_OUT);
 
       // Monitor power button: pressed in while the screen is off
       const pwrTargetZ = screenOn ? POWER_OUT : POWER_IN;
       powerButton.position.z += (pwrTargetZ - powerButton.position.z) * 0.25;
+      if (extPowerBtn && extPowerBase)
+        extPowerBtn.position.z = extPowerBase.z + (powerButton.position.z - POWER_OUT);
       screenPlane.visible = screenOn;
       hudPlane.visible = screenOn;
       crtGlow.intensity += ((screenOn ? 0.55 : 0) - crtGlow.intensity) * 0.15;
@@ -2856,11 +3053,13 @@ export default function Scene3D() {
         renderer.render(asciiScene, asciiCamera);
         renderer.setRenderTarget(null);
       }
-      renderer.render(scene, camera);
+      outlinePass.selectedObjects = hovered ? [hovered] : [];
+      composer.render();
     }
     animate();
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(raf);
       clearInterval(skyInterval);
       embedController?.destroy?.();
@@ -2879,6 +3078,7 @@ export default function Scene3D() {
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchend", onTouchEnd);
       window.removeEventListener("touchmove", onTouchMove);
+      composer.dispose();
       renderer.dispose();
       particleRT.dispose();
       screenRT.dispose();

@@ -76,9 +76,17 @@ cursor hit-testing won't line up. Everything else is forgiving.
 
 ---
 
-## Stage 4 — Bring it back (I wire this)
+## Stage 4 — Bring it back (automatic)
 
-Drop each exported shell into **`public/models/`** using these names:
+Drop each exported shell into **`public/models/`** using these names and
+**reload the page** — an auto-loader finds them, hides the matching procedural
+shell, flattens the GLB's PBR materials to the scene's matte style, re-inks
+edge outlines, and re-binds click targets. A missing/broken file just leaves
+the procedural shell in place; the console logs `[models] swapped in: …`.
+
+Name sub-objects `power-button` (monitor), `radio-button` / `readout` (radio),
+and `readout` (streak counter) to have their behavior re-bound automatically —
+see `public/models/README.md`.
 
 | File | Replaces |
 | --- | --- |
