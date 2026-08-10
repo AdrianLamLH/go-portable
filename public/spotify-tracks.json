@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-07T08:57:21.515Z",
+  "updatedAt": "2026-08-10T09:18:02.794Z",
   "topTracks": [
     {
       "id": "2Rbkkd9pKlLtBOhsp5NmSI",
@@ -44,22 +44,22 @@
       "artist": "Masahiro Tokuda"
     },
     {
-      "id": "3LtlQb74pLqC5KsllxIXoV",
-      "uri": "spotify:track:3LtlQb74pLqC5KsllxIXoV",
-      "name": "The Medium",
-      "artist": "Toro y Moi, Unknown Mortal Orchestra"
-    },
-    {
       "id": "1OWBh1eVxUdA1Z6UA8r4nh",
       "uri": "spotify:track:1OWBh1eVxUdA1Z6UA8r4nh",
       "name": "the feeling",
       "artist": "Steve Lacy"
     },
     {
-      "id": "3B3eD9Mo22YTke9AuOirzn",
-      "uri": "spotify:track:3B3eD9Mo22YTke9AuOirzn",
-      "name": "I Saw Your Face",
-      "artist": "Malcolm Todd"
+      "id": "0zprBQpAaNFdV82NqjyiNx",
+      "uri": "spotify:track:0zprBQpAaNFdV82NqjyiNx",
+      "name": "is it cool? (feat. SZA)",
+      "artist": "Steve Lacy, SZA"
+    },
+    {
+      "id": "3LtlQb74pLqC5KsllxIXoV",
+      "uri": "spotify:track:3LtlQb74pLqC5KsllxIXoV",
+      "name": "The Medium",
+      "artist": "Toro y Moi, Unknown Mortal Orchestra"
     }
   ]
 }
