@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-11T08:53:31.591Z",
+  "updatedAt": "2026-08-12T09:09:16.960Z",
   "topTracks": [
     {
       "id": "2Rbkkd9pKlLtBOhsp5NmSI",
@@ -12,6 +12,12 @@
       "uri": "spotify:track:2zVJXqtPeqcKJXZUFEZKrY",
       "name": "I'll Let You Finish",
       "artist": "Finn Wolfhard"
+    },
+    {
+      "id": "22NHkFYbgxB2Zirj29Gbp8",
+      "uri": "spotify:track:22NHkFYbgxB2Zirj29Gbp8",
+      "name": "oh yeah?",
+      "artist": "Steve Lacy"
     },
     {
       "id": "0lok0VDJn0zRvHLBCITSSw",
@@ -32,34 +38,28 @@
       "artist": "Malcolm Todd"
     },
     {
-      "id": "3rhgTxmFHqPYOBq9xzcyUT",
-      "uri": "spotify:track:3rhgTxmFHqPYOBq9xzcyUT",
-      "name": "Tear",
-      "artist": "Rich Brian"
-    },
-    {
-      "id": "7yQkofYUm1SvBJ1dmzeJlI",
-      "uri": "spotify:track:7yQkofYUm1SvBJ1dmzeJlI",
-      "name": "silent snow",
-      "artist": "Masahiro Tokuda"
-    },
-    {
-      "id": "22NHkFYbgxB2Zirj29Gbp8",
-      "uri": "spotify:track:22NHkFYbgxB2Zirj29Gbp8",
-      "name": "oh yeah?",
-      "artist": "Steve Lacy"
-    },
-    {
       "id": "1OWBh1eVxUdA1Z6UA8r4nh",
       "uri": "spotify:track:1OWBh1eVxUdA1Z6UA8r4nh",
       "name": "the feeling",
       "artist": "Steve Lacy"
     },
     {
-      "id": "0qtRKe7enOBjlPzBEM5Xy6",
-      "uri": "spotify:track:0qtRKe7enOBjlPzBEM5Xy6",
-      "name": "Heaven Ain't Sold",
-      "artist": "Choker"
+      "id": "3rhgTxmFHqPYOBq9xzcyUT",
+      "uri": "spotify:track:3rhgTxmFHqPYOBq9xzcyUT",
+      "name": "Tear",
+      "artist": "Rich Brian"
+    },
+    {
+      "id": "0zprBQpAaNFdV82NqjyiNx",
+      "uri": "spotify:track:0zprBQpAaNFdV82NqjyiNx",
+      "name": "is it cool? (feat. SZA)",
+      "artist": "Steve Lacy, SZA"
+    },
+    {
+      "id": "7yQkofYUm1SvBJ1dmzeJlI",
+      "uri": "spotify:track:7yQkofYUm1SvBJ1dmzeJlI",
+      "name": "silent snow",
+      "artist": "Masahiro Tokuda"
     }
   ]
 }
