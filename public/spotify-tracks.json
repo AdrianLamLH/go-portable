@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-12T09:09:16.960Z",
+  "updatedAt": "2026-08-14T09:05:42.074Z",
   "topTracks": [
     {
       "id": "2Rbkkd9pKlLtBOhsp5NmSI",
@@ -32,6 +32,12 @@
       "artist": "Ariana Grande"
     },
     {
+      "id": "6Xp2Zm2sJLdODReZWBBifO",
+      "uri": "spotify:track:6Xp2Zm2sJLdODReZWBBifO",
+      "name": "DANCE...",
+      "artist": "Slayyyter"
+    },
+    {
       "id": "0eAuGrXyGFYwur9ARUe7LJ",
       "uri": "spotify:track:0eAuGrXyGFYwur9ARUe7LJ",
       "name": "Earrings",
@@ -54,12 +60,6 @@
       "uri": "spotify:track:0zprBQpAaNFdV82NqjyiNx",
       "name": "is it cool? (feat. SZA)",
       "artist": "Steve Lacy, SZA"
-    },
-    {
-      "id": "7yQkofYUm1SvBJ1dmzeJlI",
-      "uri": "spotify:track:7yQkofYUm1SvBJ1dmzeJlI",
-      "name": "silent snow",
-      "artist": "Masahiro Tokuda"
     }
   ]
 }
