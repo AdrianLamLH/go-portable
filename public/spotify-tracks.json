@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-08-16T08:26:51.801Z",
+  "updatedAt": "2026-08-18T08:34:17.743Z",
   "topTracks": [
     {
-      "id": "2Rbkkd9pKlLtBOhsp5NmSI",
-      "uri": "spotify:track:2Rbkkd9pKlLtBOhsp5NmSI",
+      "id": "6eoIuFQSEXcwQqr0RnFdW8",
+      "uri": "spotify:track:6eoIuFQSEXcwQqr0RnFdW8",
       "name": "Lost Boys",
       "artist": "Phoebe Bridgers"
     },
@@ -44,12 +44,6 @@
       "artist": "Malcolm Todd"
     },
     {
-      "id": "0zprBQpAaNFdV82NqjyiNx",
-      "uri": "spotify:track:0zprBQpAaNFdV82NqjyiNx",
-      "name": "is it cool? (feat. SZA)",
-      "artist": "Steve Lacy, SZA"
-    },
-    {
       "id": "1OWBh1eVxUdA1Z6UA8r4nh",
       "uri": "spotify:track:1OWBh1eVxUdA1Z6UA8r4nh",
       "name": "the feeling",
@@ -60,6 +54,12 @@
       "uri": "spotify:track:0qtRKe7enOBjlPzBEM5Xy6",
       "name": "Heaven Ain't Sold",
       "artist": "Choker"
+    },
+    {
+      "id": "0rLtUuQgwIlw6vv2eqHKdt",
+      "uri": "spotify:track:0rLtUuQgwIlw6vv2eqHKdt",
+      "name": "BEAT UP CHANEL$",
+      "artist": "Slayyyter"
     }
   ]
 }
