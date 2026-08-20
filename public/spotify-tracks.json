@@ -1,6 +1,12 @@
 {
-  "updatedAt": "2026-08-19T08:34:54.871Z",
+  "updatedAt": "2026-08-20T08:35:29.235Z",
   "topTracks": [
+    {
+      "id": "22NHkFYbgxB2Zirj29Gbp8",
+      "uri": "spotify:track:22NHkFYbgxB2Zirj29Gbp8",
+      "name": "oh yeah?",
+      "artist": "Steve Lacy"
+    },
     {
       "id": "6eoIuFQSEXcwQqr0RnFdW8",
       "uri": "spotify:track:6eoIuFQSEXcwQqr0RnFdW8",
@@ -14,16 +20,16 @@
       "artist": "Slayyyter"
     },
     {
-      "id": "22NHkFYbgxB2Zirj29Gbp8",
-      "uri": "spotify:track:22NHkFYbgxB2Zirj29Gbp8",
-      "name": "oh yeah?",
-      "artist": "Steve Lacy"
-    },
-    {
       "id": "3FZoov0ORtnr8TznSNI1y2",
       "uri": "spotify:track:3FZoov0ORtnr8TznSNI1y2",
       "name": "brand new chanel$",
       "artist": "Slayyyter"
+    },
+    {
+      "id": "1OWBh1eVxUdA1Z6UA8r4nh",
+      "uri": "spotify:track:1OWBh1eVxUdA1Z6UA8r4nh",
+      "name": "the feeling",
+      "artist": "Steve Lacy"
     },
     {
       "id": "2zVJXqtPeqcKJXZUFEZKrY",
@@ -54,12 +60,6 @@
       "uri": "spotify:track:0eAuGrXyGFYwur9ARUe7LJ",
       "name": "Earrings",
       "artist": "Malcolm Todd"
-    },
-    {
-      "id": "1qN5HBXkNn8sq54AgM1ZJJ",
-      "uri": "spotify:track:1qN5HBXkNn8sq54AgM1ZJJ",
-      "name": "DANCE... - Edit",
-      "artist": "Slayyyter"
     }
   ]
 }
