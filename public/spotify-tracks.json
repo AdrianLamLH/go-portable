@@ -1,17 +1,11 @@
 {
-  "updatedAt": "2026-08-20T08:35:29.235Z",
+  "updatedAt": "2026-08-22T08:26:36.127Z",
   "topTracks": [
     {
       "id": "22NHkFYbgxB2Zirj29Gbp8",
       "uri": "spotify:track:22NHkFYbgxB2Zirj29Gbp8",
       "name": "oh yeah?",
       "artist": "Steve Lacy"
-    },
-    {
-      "id": "6eoIuFQSEXcwQqr0RnFdW8",
-      "uri": "spotify:track:6eoIuFQSEXcwQqr0RnFdW8",
-      "name": "Lost Boys",
-      "artist": "Phoebe Bridgers"
     },
     {
       "id": "6Xp2Zm2sJLdODReZWBBifO",
@@ -30,6 +24,12 @@
       "uri": "spotify:track:1OWBh1eVxUdA1Z6UA8r4nh",
       "name": "the feeling",
       "artist": "Steve Lacy"
+    },
+    {
+      "id": "6eoIuFQSEXcwQqr0RnFdW8",
+      "uri": "spotify:track:6eoIuFQSEXcwQqr0RnFdW8",
+      "name": "Lost Boys",
+      "artist": "Phoebe Bridgers"
     },
     {
       "id": "2zVJXqtPeqcKJXZUFEZKrY",
