@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-22T08:26:36.127Z",
+  "updatedAt": "2026-08-25T08:39:43.799Z",
   "topTracks": [
     {
       "id": "22NHkFYbgxB2Zirj29Gbp8",
@@ -50,16 +50,16 @@
       "artist": "Ariana Grande"
     },
     {
+      "id": "5Fdj0DtH4ZhymltyN5xEv2",
+      "uri": "spotify:track:5Fdj0DtH4ZhymltyN5xEv2",
+      "name": "Camera",
+      "artist": "Charli xcx"
+    },
+    {
       "id": "0rLtUuQgwIlw6vv2eqHKdt",
       "uri": "spotify:track:0rLtUuQgwIlw6vv2eqHKdt",
       "name": "BEAT UP CHANEL$",
       "artist": "Slayyyter"
-    },
-    {
-      "id": "0eAuGrXyGFYwur9ARUe7LJ",
-      "uri": "spotify:track:0eAuGrXyGFYwur9ARUe7LJ",
-      "name": "Earrings",
-      "artist": "Malcolm Todd"
     }
   ]
 }
