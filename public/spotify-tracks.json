@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-25T08:39:43.799Z",
+  "updatedAt": "2026-08-26T08:40:29.490Z",
   "topTracks": [
     {
       "id": "22NHkFYbgxB2Zirj29Gbp8",
@@ -8,15 +8,15 @@
       "artist": "Steve Lacy"
     },
     {
-      "id": "6Xp2Zm2sJLdODReZWBBifO",
-      "uri": "spotify:track:6Xp2Zm2sJLdODReZWBBifO",
-      "name": "DANCE...",
-      "artist": "Slayyyter"
-    },
-    {
       "id": "3FZoov0ORtnr8TznSNI1y2",
       "uri": "spotify:track:3FZoov0ORtnr8TznSNI1y2",
       "name": "brand new chanel$",
+      "artist": "Slayyyter"
+    },
+    {
+      "id": "6Xp2Zm2sJLdODReZWBBifO",
+      "uri": "spotify:track:6Xp2Zm2sJLdODReZWBBifO",
+      "name": "DANCE...",
       "artist": "Slayyyter"
     },
     {
@@ -50,16 +50,16 @@
       "artist": "Ariana Grande"
     },
     {
-      "id": "5Fdj0DtH4ZhymltyN5xEv2",
-      "uri": "spotify:track:5Fdj0DtH4ZhymltyN5xEv2",
-      "name": "Camera",
-      "artist": "Charli xcx"
-    },
-    {
       "id": "0rLtUuQgwIlw6vv2eqHKdt",
       "uri": "spotify:track:0rLtUuQgwIlw6vv2eqHKdt",
       "name": "BEAT UP CHANEL$",
       "artist": "Slayyyter"
+    },
+    {
+      "id": "5Fdj0DtH4ZhymltyN5xEv2",
+      "uri": "spotify:track:5Fdj0DtH4ZhymltyN5xEv2",
+      "name": "Camera",
+      "artist": "Charli xcx"
     }
   ]
 }
