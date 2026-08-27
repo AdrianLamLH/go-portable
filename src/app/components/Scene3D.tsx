@@ -32,14 +32,14 @@ const WINDOW_TITLES: Record<PageId, string> = {
 // Extras photo-dump captions, keyed by the filename in public/gallery/.
 // Shown in a hover tooltip over the slide. Edit freely as photos change.
 const GALLERY_CAPTIONS: Record<string, string> = {
-  "photo1.jpg": "ucla class of 2024 — royce hall grad shoot",
-  "photo2.jpg": "anthropic × menlo builder day — the whole room",
-  "photo3.jpg": "borrowed a tokyo cop's honda for exactly one photo",
-  "photo4.jpg": "intro talk as a summer intern (yes, i quoted jake the dog)",
-  "photo5.jpg": "the builder day team — me, wei chun & benedict",
-  "photo6.jpg": "ucla × slalom data challenge — everybody say SMILE",
-  "photo7.jpg": "la city council commendation for the hillside streets project",
-  "photo8.png": "open mic night — eyes closed, fully committing",
+  "photo1.jpg": "UCLA class of 2024 — Royce Hall grad shoot",
+  "photo2.jpg": "Anthropic × Menlo builder day — the whole room",
+  "photo3.jpg": "Shoutout to the cop in Tokyo for letting me borrow his honda",
+  "photo4.jpg": "Self-intro as a summer intern in HK (ofc I quoted jake the dog)",
+  "photo5.jpg": "The builder day team — me, wei chun & benedict",
+  "photo6.jpg": "UCLA × slalom data challenge, preparing parking for LA28",
+  "photo7.jpg": "LA city council commendation for the hillside streets project",
+  "photo8.png": "My first A Capella duet, check us out at OnThatNoteUCLA!",
 };
 
 // Screen palette — the POC's locked tokens
@@ -301,14 +301,19 @@ export default function Scene3D() {
       skyTexture.needsUpdate = true;
     }, 60_000);
 
-    // ─── Window easter egg — a dark silhouette walks past, rarely ────
-    // Rolled once, 5s after mount; 1-in-100 odds. Drawn as an overlay on the
-    // sky canvas so it composites with whatever time-of-day is showing.
-    let walkerRolled = false;
+    // ─── Window easter egg — a dark silhouette walks past ────────────
+    // Summoned by greeting the terminal ("hey" / "hello" + enter). Drawn as an
+    // overlay on the sky canvas so it composites with whatever time-of-day is
+    // showing.
     let walkerActive = false;
     let walkerStart = 0;
     let walkerDir = 1;
-    const WALKER_DELAY = 5000, WALKER_DURATION = 4200, WALKER_CHANCE = 0.01;
+    const WALKER_DURATION = 4200;
+    function triggerWalker() {
+      walkerActive = true;
+      walkerStart = performance.now();
+      walkerDir = Math.random() < 0.5 ? 1 : -1; // still a coin flip which way
+    }
     function drawWalker(ctx: CanvasRenderingContext2D, W: number, H: number, tt: number, dir: number) {
       const progress = dir === 1 ? tt : 1 - tt;
       const x = -30 + progress * (W + 60);
@@ -527,6 +532,7 @@ export default function Scene3D() {
     const captchaAnim = loadGifAnim("/projects/ai-proof-captcha.gif");
     const neocitiesAnim = loadGifAnim("/projects/neocities-site.gif");
     const chinatownAnim = loadGifAnim("/projects/chinatown-hacks.gif"); // compressed to 360px / 2.7 MB
+    const toodlesAnim = loadGifAnim("/projects/toodles-demo.gif"); // compressed to 320px / 0.7 MB
 
     // Contain-fit draws the WHOLE src into (x,y,w,h), centered and letterboxed
     // so nothing is cropped. sw/sh are the source's natural dimensions; pass 0
@@ -1566,6 +1572,8 @@ export default function Scene3D() {
     async function submitTerminal() {
       const q = termInput.trim();
       if (!q || termBusy) return;
+      // Saying hi to the terminal sends someone past the window.
+      if (/^(hey|hello)[\s!.?,]*$/i.test(q)) triggerWalker();
       termInput = "";
       lastUserMsg = q;
       termBusy = true;
@@ -1985,18 +1993,22 @@ export default function Scene3D() {
       hud.textBaseline = "middle";
       hud.font = `700 30px ${MONO}`;
       hud.fillStyle = S_ACCENT;
-      hud.fillText("~*~ ABOUT ME ~*~", HUD_W / 2, y); y += 58;
-      hud.font = `900 44px ${MARKER}`;
+      hud.fillText("⛧°。 ⋆༺ABOUT ME༻⋆。 °⛧", HUD_W / 2, y); y += 58;
+      // The greeting is a long line in a big display font — shrink it until it
+      // fits rather than letting it run off both edges of the screen.
       hud.fillStyle = S_INK;
-      hud.fillText("hi, i'm adrian!", HUD_W / 2, y); y += 56;
+      const greeting = "Hi I'm adrian, welcome to my humble abode :^)";
+      let gsize = 44;
+      hud.font = `900 ${gsize}px ${MARKER}`;
+      while (gsize > 22 && hud.measureText(greeting).width > HUD_W - 96) {
+        gsize -= 2;
+        hud.font = `900 ${gsize}px ${MARKER}`;
+      }
+      hud.fillText(greeting, HUD_W / 2, y); y += 56;
       hud.font = `500 20px ${MONO}`;
       hud.fillStyle = S_DIM;
       [
-        "[ filler bio — the real one is coming, promise ]",
-        "software engineer · new york city",
-        "i like building weird little computers inside computers,",
-        "lifting heavy things, and mission control radio.",
-        "this entire site runs on a CRT that doesn't exist.",
+        "Data Scientist/AI Engineer · AMC A-lister · New York City",
       ].forEach(l => { hud.fillText(l, HUD_W / 2, y); y += 30; });
       y += 14;
       hud.fillStyle = S_LINE;
@@ -2005,10 +2017,12 @@ export default function Scene3D() {
       y = sectionHeader(">> fave things", y);
       hud.font = `500 19px ${MONO}`;
       ([
-        ["editor", "the one that starts flame wars"],
-        ["coffee order", "yes"],
-        ["operating system", "LamOS (obviously)"],
-        ["gym lift", "deadlift, ask me about my back"],
+        ["meal", "quesabirria (and a fat nap after)"],
+        ["coffee order", "hot mocha w/ oatmilk (in a heatwave)"],
+        ["musician", "Daniel Caesar"],
+        ["movie", "interstellar"],
+        ["miniclip game", "raftwars 2"],
+        ["superhero", "spiderman ofc"],
       ] as const).forEach(([k, v]) => {
         hud.fillStyle = S_ACCENT;
         hud.fillText(`· ${k}:`, 104, y);
@@ -2030,37 +2044,6 @@ export default function Scene3D() {
       hud.fillText("visitor № 001337", HUD_W / 2, y + 28);
       y += 84;
 
-      // Blinking UNDER CONSTRUCTION tape
-      if (Math.floor(now / 600) % 2 === 0) {
-        const bw = 460, bx = HUD_W / 2 - bw / 2, bh = 48;
-        hud.save();
-        hud.beginPath();
-        hud.rect(bx, y, bw, bh);
-        hud.clip();
-        hud.fillStyle = "#e8c547";
-        hud.fillRect(bx, y, bw, bh);
-        hud.fillStyle = "#141414";
-        for (let sx = -48; sx < bw + 48; sx += 48) {
-          hud.beginPath();
-          hud.moveTo(bx + sx, y + bh);
-          hud.lineTo(bx + sx + 24, y + bh);
-          hud.lineTo(bx + sx + 44, y);
-          hud.lineTo(bx + sx + 20, y);
-          hud.closePath();
-          hud.fill();
-        }
-        hud.fillStyle = "#e8c547";
-        hud.fillRect(bx + 70, y + 8, bw - 140, bh - 16);
-        hud.fillStyle = "#141414";
-        hud.font = `900 21px ${MONO}`;
-        hud.fillText("UNDER CONSTRUCTION", HUD_W / 2, y + bh / 2 + 1);
-        hud.restore();
-      }
-      y += 78;
-
-      hud.font = `500 15px ${MONO}`;
-      hud.fillStyle = S_DIM;
-      hud.fillText("best viewed at 1024×768 · photo dump lives in extras", HUD_W / 2, y);
       return y + 30;
     }
 
@@ -2202,8 +2185,14 @@ export default function Scene3D() {
         {
           name: "chinatown hacks",
           draw: drawGifThumb(chinatownAnim),
-          blurb: "co-organized a hackathon for 25+ bay area high schools — $50k+ raised.",
+          blurb: "co-organized a hackathon for 25+ bay area high schools, raising $50k+ for the students.",
           tags: "community · hackathon · sf",
+        },
+        {
+          name: "toodles",
+          draw: drawGifThumb(toodlesAnim),
+          blurb: "a virtual mailing extension to remind you to write to your friends and tell them what they mean to you!",
+          tags: "chrome extension · cosmos",
         },
         {
           name: "shorthandml",
@@ -2212,32 +2201,32 @@ export default function Scene3D() {
           tags: "pytorch · ctc · beam search",
         },
         {
-          name: "gotcha! — ai-proof captcha",
+          name: "wegotcha",
           draw: drawGifThumb(captchaAnim),
-          blurb: "2nd @ anthropic x menlo builder day — beating computer use with motion blur.",
-          tags: "claude · computer use · $55k",
+          blurb: "ai-proof captcha that won us 2nd @ anthropic x menlo builder day with a lil motion blur and our natural human experience.",
+          tags: "claude · computer use",
         },
         {
-          name: "personal website, twice",
+          name: "personal website alt",
           draw: drawGifThumb(neocitiesAnim),
-          blurb: "the hand-drawn neocities original, reborn as this fake OS on a CRT. you are here.",
-          tags: "neocities · three.js · canvas",
+          blurb: "paying homage to that old internet charm of neocities, handdrawn by me.",
+          tags: "neocities · three.js · my ipad",
         },
         {
           name: "nook",
           draw: drawStill(nookImg),
-          blurb: "a cozy ios app for livestreaming focus sessions to real friends only.",
-          tags: "swift · supabase · ios",
+          blurb: "a cozy ios app for livestreaming those focus sessions to your close friends, cause it's nice to have some company doing what you love.",
+          tags: "swift · supabase",
         },
         {
           name: "matcha",
           draw: drawStill(matchaImg),
-          blurb: "drop in your class notes, get back a playable quiz game. learning, but make it arcade.",
-          tags: "next.js · ai sdk · llm",
+          blurb: "making studying a game, who doesn't love games? It's a win-win.",
+          tags: "next.js · mcps",
         },
       ];
 
-      const GAP = 16, CARD_W = (HUD_W - 120 - GAP) / 2, THUMB_H = 300, TEXT_H = 96;
+      const GAP = 16, CARD_W = (HUD_W - 120 - GAP) / 2, THUMB_H = 300, TEXT_H = 116;
       const CARD_H = THUMB_H + TEXT_H;
       hud.textAlign = "left";
       cards.forEach((p, i) => {
@@ -2252,7 +2241,7 @@ export default function Scene3D() {
         hud.fillText(p.name, cx + 14, cy + THUMB_H + 24);
         hud.font = `500 15px ${MONO}`;
         hud.fillStyle = S_INK;
-        wrapLines(p.blurb, CARD_W - 28).slice(0, 2).forEach((line, li) =>
+        wrapLines(p.blurb, CARD_W - 28).slice(0, 3).forEach((line, li) =>
           hud.fillText(line, cx + 14, cy + THUMB_H + 48 + li * 20));
         hud.font = `500 13px ${MONO}`;
         hud.fillStyle = S_DIM;
@@ -2270,7 +2259,7 @@ export default function Scene3D() {
       hud.font = `700 21px ${MONO}`;
       hud.fillStyle = S_ACCENT;
       hud.textAlign = "left";
-      const mtext = "✦ photo dump ✦ mostly gym and questionable lighting ✦ ";
+      const mtext = "Bits from my photo library ✦ college moments + hackathon shenanigans + solo travel throwbacks ✦ ";
       const mw = hud.measureText(mtext).width;
       const off = (now / 20) % mw;
       hud.fillText(mtext, -off, y);
@@ -2304,7 +2293,7 @@ export default function Scene3D() {
       } else {
         hud.font = `500 18px ${MONO}`;
         hud.fillStyle = S_DIM;
-        hud.fillText("no photos yet — drop some into public/gallery/", HUD_W / 2, y + FH / 2);
+        hud.fillText("no photos yet - oops", HUD_W / 2, y + FH / 2);
       }
       hud.strokeStyle = "#3a342a";
       hud.lineWidth = 2;
@@ -2406,7 +2395,7 @@ export default function Scene3D() {
         const now = performance.now();
         if (!termGreeted) {
           termGreeted = true;
-          setBubble("hey, i'm adrian — well, the digit version of him <smile/> ask me about my work, projects, or anything else <nod/>");
+          setBubble("Hey, I'm adrian — well, the digit version of him <smile/> ask me about my work, projects, or anything else <nod/>");
         }
 
         // Typewriter reveal + expression events
@@ -2610,15 +2599,7 @@ export default function Scene3D() {
         }
       }
 
-      // ── Window walker — rolled once, 5s in ──
-      if (!walkerRolled && now - t0 > WALKER_DELAY) {
-        walkerRolled = true;
-        if (Math.random() < WALKER_CHANCE) {
-          walkerActive = true;
-          walkerStart = now;
-          walkerDir = Math.random() < 0.5 ? 1 : -1;
-        }
-      }
+      // ── Window walker — triggered by greeting the terminal ──
       if (walkerActive) {
         const age = now - walkerStart;
         paintSky(skyCtx, 512, 384);
