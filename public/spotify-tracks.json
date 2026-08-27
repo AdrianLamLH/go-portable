@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-26T08:40:29.490Z",
+  "updatedAt": "2026-08-27T18:50:33.167Z",
   "topTracks": [
     {
       "id": "22NHkFYbgxB2Zirj29Gbp8",
@@ -26,16 +26,16 @@
       "artist": "Steve Lacy"
     },
     {
-      "id": "6eoIuFQSEXcwQqr0RnFdW8",
-      "uri": "spotify:track:6eoIuFQSEXcwQqr0RnFdW8",
-      "name": "Lost Boys",
-      "artist": "Phoebe Bridgers"
-    },
-    {
       "id": "2zVJXqtPeqcKJXZUFEZKrY",
       "uri": "spotify:track:2zVJXqtPeqcKJXZUFEZKrY",
       "name": "I'll Let You Finish",
       "artist": "Finn Wolfhard"
+    },
+    {
+      "id": "6eoIuFQSEXcwQqr0RnFdW8",
+      "uri": "spotify:track:6eoIuFQSEXcwQqr0RnFdW8",
+      "name": "Lost Boys",
+      "artist": "Phoebe Bridgers"
     },
     {
       "id": "3iy2QuCtCzpWnR6tia39AB",
@@ -50,16 +50,16 @@
       "artist": "Ariana Grande"
     },
     {
+      "id": "2itxcGh2MqEGswuXdeRlLL",
+      "uri": "spotify:track:2itxcGh2MqEGswuXdeRlLL",
+      "name": "The Outside",
+      "artist": "Phoebe Bridgers"
+    },
+    {
       "id": "0rLtUuQgwIlw6vv2eqHKdt",
       "uri": "spotify:track:0rLtUuQgwIlw6vv2eqHKdt",
       "name": "BEAT UP CHANEL$",
       "artist": "Slayyyter"
-    },
-    {
-      "id": "5Fdj0DtH4ZhymltyN5xEv2",
-      "uri": "spotify:track:5Fdj0DtH4ZhymltyN5xEv2",
-      "name": "Camera",
-      "artist": "Charli xcx"
     }
   ]
 }
