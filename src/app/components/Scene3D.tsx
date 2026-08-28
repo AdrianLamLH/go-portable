@@ -3,6 +3,7 @@ import * as THREE from "three";
 import posterUrls from "virtual:posters";
 import galleryUrls from "virtual:gallery";
 import { parseGIF, decompressFrames } from "gifuct-js";
+import { RESUME_HTML, RESUME_CSS } from "./resumeMarkup";
 
 // Full 3D-polygon rendition of the workstation: CRT monitor, keyboard and
 // mouse are low-poly meshes with flat lambert shading and dark edge outlines.
@@ -10,12 +11,12 @@ import { parseGIF, decompressFrames } from "gifuct-js";
 // screen face; tabs + cursor + scanlines composite on a HUD canvas texture.
 
 type SphereMode = "lattice" | "terminal";
-type PageId = "about" | "work" | "projects" | "extras" | "chat";
+type PageId = "about" | "howto" | "projects" | "extras" | "chat";
 
 // LamOS desktop — icons boot in after the splash screen
 const DESKTOP_ICONS: { id: PageId; label: string; kind: "folder" | "exe" }[] = [
   { id: "about", label: "about me", kind: "folder" },
-  { id: "work", label: "work experience", kind: "folder" },
+  { id: "howto", label: "how_to", kind: "folder" },
   { id: "projects", label: "personal projects", kind: "folder" },
   { id: "extras", label: "extras", kind: "folder" },
   { id: "chat", label: "let's chat.exe", kind: "exe" },
@@ -23,7 +24,7 @@ const DESKTOP_ICONS: { id: PageId; label: string; kind: "folder" | "exe" }[] = [
 
 const WINDOW_TITLES: Record<PageId, string> = {
   about: "about_me",
-  work: "work_experience.doc",
+  howto: "how_to.txt",
   projects: "personal_projects",
   extras: "extras",
   chat: "lets_chat.exe",
@@ -308,27 +309,106 @@ export default function Scene3D() {
     let walkerActive = false;
     let walkerStart = 0;
     let walkerDir = 1;
-    const WALKER_DURATION = 4200;
+    const WALKER_DURATION = 7200;
+
+    // The face that pops up at the pane partway through the routine.
+    const nikkiImg = new Image();
+    nikkiImg.src = "/nikki.png";
+    let nikkiReady = false;
+    nikkiImg.onload = () => { nikkiReady = true; };
+
     function triggerWalker() {
       walkerActive = true;
       walkerStart = performance.now();
       walkerDir = Math.random() < 0.5 ? 1 : -1; // still a coin flip which way
     }
-    function drawWalker(ctx: CanvasRenderingContext2D, W: number, H: number, tt: number, dir: number) {
-      const progress = dir === 1 ? tt : 1 - tt;
-      const x = -30 + progress * (W + 60);
-      const y = H * 0.74; // roughly sidewalk level within the window view
-      const stride = Math.sin(tt * Math.PI * 16);
-      const bob = Math.abs(stride) * 2;
-      ctx.fillStyle = "rgba(4, 4, 8, 0.62)";
+
+    // Routine beats, as fractions of WALKER_DURATION. She strolls in, breaks
+    // into a run at the window, drops out of sight, pops up over the sill,
+    // sinks back down, then carries on the way she was heading.
+    const W_RUN = 0.20, W_DROP = 0.30, W_GONE = 0.37;
+    const W_POP = 0.50, W_HOLD = 0.70, W_SINK = 0.84;
+    const SCALE = 2.6; // she read as a distant speck at 1x
+
+    const easeOutBack = (u: number) => {
+      const c = 1.9;
+      return 1 + (c + 1) * Math.pow(u - 1, 3) + c * Math.pow(u - 1, 2);
+    };
+    const clamp01 = (u: number) => Math.max(0, Math.min(1, u));
+
+    function drawFigure(
+      ctx: CanvasRenderingContext2D, x: number, groundY: number,
+      phase: number, running: boolean, drop: number
+    ) {
+      const s = SCALE;
+      const stride = Math.sin(phase);
+      const bob = Math.abs(stride) * 2 * s;
+      const y = groundY + drop;
+      const lean = running ? 0.16 : 0; // tipped forward into the run
+      ctx.save();
+      ctx.translate(x, y - bob);
+      ctx.rotate(lean);
+      ctx.fillStyle = "rgba(4, 4, 8, 0.66)";
       ctx.beginPath();
-      ctx.ellipse(x, y - 30 - bob, 5, 6, 0, 0, Math.PI * 2); // head
+      ctx.ellipse(0, -30 * s, 5 * s, 6 * s, 0, 0, Math.PI * 2); // head
       ctx.fill();
-      ctx.fillRect(x - 4, y - 24 - bob, 8, 18); // torso
-      ctx.fillRect(x - 4, y - 6 - bob, 3, 10 + stride * 4); // legs, scissoring
-      ctx.fillRect(x + 1, y - 6 - bob, 3, 10 - stride * 4);
-      ctx.fillRect(x - 6, y - 22 - bob, 2, 12 - stride * 3); // arms, swinging
-      ctx.fillRect(x + 4, y - 22 - bob, 2, 12 + stride * 3);
+      ctx.fillRect(-4 * s, -24 * s, 8 * s, 18 * s);             // torso
+      const kick = running ? 7 : 4;
+      ctx.fillRect(-4 * s, -6 * s, 3 * s, (10 + stride * kick) * s); // legs
+      ctx.fillRect(1 * s, -6 * s, 3 * s, (10 - stride * kick) * s);
+      const swing = running ? 5 : 3;
+      ctx.fillRect(-6 * s, -22 * s, 2 * s, (12 - stride * swing) * s); // arms
+      ctx.fillRect(4 * s, -22 * s, 2 * s, (12 + stride * swing) * s);
+      ctx.restore();
+    }
+
+    function drawWalker(ctx: CanvasRenderingContext2D, W: number, H: number, tt: number, dir: number) {
+      const groundY = H * 0.74; // roughly sidewalk level within the window view
+      const entry = dir === 1 ? -50 : W + 50;
+      const exit = dir === 1 ? W + 50 : -50;
+      const mid = W * 0.5;
+
+      if (tt < W_DROP) {
+        // Stroll in, then break into a run for the last stretch
+        const running = tt >= W_RUN;
+        const u = tt / W_DROP;
+        // Ease into the run so the speed-up is visible
+        const eased = u < W_RUN / W_DROP ? u : u + (u - W_RUN / W_DROP) * 0.9;
+        const x = entry + Math.min(1, eased) * (mid - entry);
+        // Drops out of sight over the last sliver of the run
+        const drop = tt > W_DROP - 0.03
+          ? ((tt - (W_DROP - 0.03)) / 0.03) * 150
+          : 0;
+        drawFigure(ctx, x, groundY, tt * Math.PI * (running ? 34 : 18), running, drop);
+        return;
+      }
+      if (tt < W_GONE) return; // the small beat where she's just gone
+
+      if (tt < W_SINK) {
+        // Face slides up past the pane, overshoots into a pop, holds, sinks
+        if (!nikkiReady) return;
+        const iw = 216, ih = iw * (nikkiImg.height / nikkiImg.width);
+        // Rest so the whole image sits inside the pane — the bottom used to
+        // run off past the sill.
+        const restY = Math.max(8, H - 12 - ih);
+        const hiddenY = H + 10;    // fully below the view
+        let top: number;
+        if (tt < W_POP) {
+          top = hiddenY + easeOutBack(clamp01((tt - W_GONE) / (W_POP - W_GONE))) * (restY - hiddenY);
+        } else if (tt < W_HOLD) {
+          top = restY;
+        } else {
+          const u = (tt - W_HOLD) / (W_SINK - W_HOLD);
+          top = restY + (u * u) * (hiddenY - restY); // slow at first, then away
+        }
+        ctx.drawImage(nikkiImg, mid - iw / 2, top, iw, ih);
+        return;
+      }
+
+      // Back on her feet, carrying on the way she was going
+      const u = (tt - W_SINK) / (1 - W_SINK);
+      const x = mid + u * (exit - mid);
+      drawFigure(ctx, x, groundY, tt * Math.PI * 18, false, 0);
     }
 
     const skyPlane = new THREE.Mesh(
@@ -564,7 +644,11 @@ export default function Scene3D() {
 
     // ─── Ceiling fan — hangs out of frame, its shadow sweeps the desk ─
     const fan = new THREE.Group();
-    fan.position.set(1.2, 7.6, 2.6); // nudged toward the key light
+    // Sits out in the room — further from the wall than the monitor — but the
+    // key light rakes in at about 34°, so pushing it much further forward
+    // throws the blade shadow off the poster entirely. This is the spot where
+    // both hold: the sweep still crosses the print.
+    fan.position.set(0.0, 7.6, 2.8);
     scene.add(fan);
     const fanMat = new THREE.MeshLambertMaterial({ color: 0x6b5f4a });
     const fanHub = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.3, 10), fanMat);
@@ -653,20 +737,25 @@ export default function Scene3D() {
     // ─── Post-it on the bottom-right bezel — right-click to lean in ─
     function createPostItTexture() {
       const c = document.createElement("canvas");
-      c.width = 128; c.height = 128;
+      c.width = 256; c.height = 256; // doubled — the handwriting face needs the pixels
       const ctx = c.getContext("2d")!;
+      ctx.clearRect(0, 0, 256, 256);
       ctx.fillStyle = "#f2df6d";
-      ctx.fillRect(0, 0, 128, 128);
+      ctx.fillRect(0, 0, 256, 256);
       ctx.fillStyle = "rgba(0,0,0,0.07)";
-      ctx.fillRect(0, 116, 128, 12); // bottom-edge curl shadow
+      ctx.fillRect(0, 232, 256, 24); // bottom-edge curl shadow
       ctx.fillStyle = "#2b2417";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.font = "700 32px 'Comic Sans MS', 'Chalkboard SE', cursive";
-      ctx.fillText("lean", 64, 40);
-      ctx.fillText("in!", 64, 74);
-      ctx.font = "700 15px 'Comic Sans MS', 'Chalkboard SE', cursive";
-      ctx.fillText("(right-click)", 64, 105);
+      // Comic Sans reads far better at this size than a thin handwriting face.
+      const hand = `'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive`;
+      ctx.font = `700 58px ${hand}`;
+      ctx.fillText("lean", 128, 62);
+      ctx.fillText("in!", 128, 122);
+      // Spelled out both ways — "right-click" alone read as unclear on laptops
+      ctx.font = `700 26px ${hand}`;
+      ctx.fillText("right-click or", 128, 184);
+      ctx.fillText("two-finger click", 128, 216);
       const tex = new THREE.CanvasTexture(c);
       tex.colorSpace = THREE.SRGBColorSpace;
       return tex;
@@ -678,10 +767,8 @@ export default function Scene3D() {
     postItG.rotation.z = -0.07; // taped on in a hurry
     postItG.visible = !isMobile; // "lean in! (right-click)" is meaningless on touch
     monitor.add(postItG);
-    const postIt = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.9, 0.9),
-      new THREE.MeshLambertMaterial({ map: createPostItTexture() })
-    );
+    const postItMat = new THREE.MeshLambertMaterial({ map: createPostItTexture() });
+    const postIt = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), postItMat);
     postItG.add(postIt);
     const tape = new THREE.Mesh(
       new THREE.PlaneGeometry(0.38, 0.15),
@@ -1173,7 +1260,7 @@ export default function Scene3D() {
 
     // ─── Radio — grey box with a press-in play button ────────
     const radio = new THREE.Group();
-    radio.position.set(4.6, DESK_Y, -1.1); // right side, behind the computer and mouse
+    radio.position.set(4.7, DESK_Y, -2.5); // out to the right of the monitor's edge so the bezel stops clipping it
     radio.rotation.y = -0.5;               // angled toward the viewer
     scene.add(radio);
 
@@ -1416,6 +1503,7 @@ export default function Scene3D() {
     calFront.position.set(0, CAL_H / 2, CAL_D / 2);
     calFront.rotation.x = -CAL_TILT;
     calFront.castShadow = true;
+    addEdges(calFront); // borders the printed face, and gives hover something to light up
     calendarG.add(calFront);
     // Back slope — identical face mirrored through the apex line
     const calBackWrap = new THREE.Group();
@@ -1423,6 +1511,7 @@ export default function Scene3D() {
     const calBack = new THREE.Mesh(calFaceGeo, new THREE.MeshLambertMaterial({ map: calBackTex }));
     calBack.position.set(0, CAL_H / 2, CAL_D / 2);
     calBack.rotation.x = -CAL_TILT;
+    addEdges(calBack);
     calBackWrap.add(calBack);
     calendarG.add(calBackWrap);
     // Triangular end caps
@@ -1513,6 +1602,396 @@ export default function Scene3D() {
       dbG.add(plate);
     }
 
+    // ─── Résumé folder — kraft case file lying on the desk ──
+    // Lies flat like the case files it's aping, tipped a few degrees up at the
+    // far edge where it rests on a scatter of loose sheets. The sheet inside is
+    // a real mesh: clicking pulls it out (it hides here, the overlay takes over).
+    const FOLD_W = 2.5, FOLD_H = 3.15;
+    const FOLD_LIFT = 0.06;  // rad the far edge rides up on the paper pile
+
+    const folderG = new THREE.Group();
+    folderG.position.set(4.45, DESK_Y, 1.8); // slid forward/down the frame; x keeps the tab inside a 16:10 viewport
+    folderG.rotation.y = -0.14; // dropped down slightly off-square
+    scene.add(folderG);
+    // Laying it down lives on its own child so the yaw above stays a clean
+    // turn (a world-X tilt on a yawed group rolls it sideways). At exactly
+    // -π/2 the panel is flat with its top edge pointing away from camera;
+    // FOLD_LIFT tips the face back toward the viewer from there.
+    const folderTilt = new THREE.Group();
+    folderTilt.rotation.x = -(Math.PI / 2 - FOLD_LIFT);
+    folderTilt.position.y = 0.075; // sits on top of the loose sheets below
+    folderG.add(folderTilt);
+
+    // Kraft stock — flat base plus paper fibre, drawn once per face size
+    function kraftCanvas(w: number, h: number, draw?: (ctx: CanvasRenderingContext2D) => void) {
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "#9d6a41";
+      ctx.fillRect(0, 0, w, h);
+      const strands = Math.round((w * h) / 380);
+      for (let i = 0; i < strands; i++) {
+        const x = Math.random() * w, y = Math.random() * h, len = 3 + Math.random() * 14;
+        ctx.strokeStyle = Math.random() > 0.5
+          ? `rgba(198,152,106,${0.05 + Math.random() * 0.18})`
+          : `rgba(110,70,36,${0.04 + Math.random() * 0.14})`;
+        ctx.lineWidth = 1 + Math.random();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + len, y + (Math.random() - 0.5) * 3);
+        ctx.stroke();
+      }
+      draw?.(ctx);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+    // Shrink a font until the string fits the given width — Arial Black is
+    // not everywhere, and the fallbacks run wider.
+    function fitFont(ctx: CanvasRenderingContext2D, text: string, max: number, start: number, spec: string) {
+      let size = start;
+      ctx.font = `${spec} ${size}px 'Arial Black', 'Helvetica Neue', Arial, sans-serif`;
+      while (ctx.measureText(text).width > max && size > 12) {
+        size -= 2;
+        ctx.font = `${spec} ${size}px 'Arial Black', 'Helvetica Neue', Arial, sans-serif`;
+      }
+      return size;
+    }
+
+    const STAMP_INK = "#6d4020";
+    // The desk is seen from ~22° above, so a face lying flat on it compresses
+    // to well under half height on screen. The stamp is drawn pre-stretched
+    // down the texture's V so perspective squashes it back to square. The
+    // camera here is fixed, which is what makes that safe.
+    const STAMP_STRETCH = 2.15;
+    const folderFrontTex = kraftCanvas(512, 640, (ctx) => {
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.save();
+      ctx.translate(256, 330);
+      ctx.scale(1, STAMP_STRETCH); // everything below is in on-screen proportions
+      ctx.rotate(-0.02);           // stamped by hand, never quite square
+      const bw = 452, bh = 142;
+      ctx.strokeStyle = STAMP_INK;
+      ctx.lineWidth = 4.5;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(-bw / 2, -bh / 2, bw, bh, 9);
+      else ctx.rect(-bw / 2, -bh / 2, bw, bh);
+      ctx.stroke();
+      ctx.fillStyle = STAMP_INK;
+      (ctx as any).letterSpacing = "9px";
+      fitFont(ctx, "RESUME", bw - 48, 74, "900");
+      ctx.fillText("RESUME", 4, -20);
+      (ctx as any).letterSpacing = "3px";
+      fitFont(ctx, "LORN HIN ADRIAN LAM", bw - 70, 21, "700");
+      ctx.fillText("LORN HIN ADRIAN LAM", 2, 38);
+      (ctx as any).letterSpacing = "0px";
+      ctx.restore();
+      // Ink distress — knock kraft-coloured speckle back over the stamp
+      for (let i = 0; i < 300; i++) {
+        const x = 30 + Math.random() * 452, y = 190 + Math.random() * 290;
+        ctx.fillStyle = `rgba(157,106,65,${0.18 + Math.random() * 0.5})`;
+        ctx.fillRect(x, y, 1 + Math.random() * 5, 1 + Math.random() * 4);
+      }
+      // Folded edge along the far side
+      ctx.fillStyle = "rgba(92,58,28,0.45)";
+      ctx.fillRect(0, 13, 512, 3);
+      ctx.fillStyle = "rgba(214,172,126,0.3)";
+      ctx.fillRect(0, 16, 512, 6);
+    });
+
+    // Back panel — the folder's underside, plain stock
+    const folderBack = new THREE.Mesh(
+      new THREE.BoxGeometry(FOLD_W, FOLD_H, 0.035),
+      new THREE.MeshLambertMaterial({ map: kraftCanvas(256, 320) })
+    );
+    addEdges(folderBack);
+    folderBack.position.set(0, FOLD_H / 2, -0.035);
+    folderTilt.add(folderBack);
+
+    // The sheet inside — sticks up past the front flap so it reads as loaded,
+    // and hides while the overlay copy is on screen.
+    const folderPaperTex = (() => {
+      const c = document.createElement("canvas");
+      c.width = 256; c.height = 320;
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "#fbf7ec";
+      ctx.fillRect(0, 0, 256, 320);
+      // Only the far strip clears the flap, so the name header lives up there,
+      // stretched like the stamp to survive the flat viewing angle.
+      ctx.save();
+      ctx.translate(128, 26);
+      ctx.scale(1, STAMP_STRETCH);
+      ctx.fillStyle = "#2b2417";
+      ctx.font = "600 11px 'Helvetica Neue', Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Lorn Hin Adrian Lam", 0, 0);
+      ctx.fillStyle = "#9a9385";
+      ctx.fillRect(-58, 7, 116, 1.4);
+      ctx.restore();
+      ctx.fillStyle = "#c3bcac";
+      for (let i = 0; i < 6; i++) ctx.fillRect(46, 62 + i * 11, 164 - Math.random() * 50, 2);
+      const tex = new THREE.CanvasTexture(c);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    })();
+    const folderPaper = new THREE.Mesh(
+      new THREE.BoxGeometry(FOLD_W - 0.2, FOLD_H - 0.12, 0.02),
+      faceMats(4, new THREE.MeshLambertMaterial({ map: folderPaperTex }), new THREE.MeshLambertMaterial({ color: 0xf6f1e4 }))
+    );
+    addEdges(folderPaper);
+    // Nudged out past the far edge and a touch right, so a white band of it
+    // shows along the top of the closed folder.
+    folderPaper.position.set(0.07, FOLD_H / 2 + 0.36, 0);
+    folderTilt.add(folderPaper);
+
+    // Front flap — carries the RESUME stamp
+    const folderFront = new THREE.Mesh(
+      new THREE.BoxGeometry(FOLD_W, FOLD_H - 0.16, 0.04),
+      faceMats(4, new THREE.MeshLambertMaterial({ map: folderFrontTex }), new THREE.MeshLambertMaterial({ color: 0x9c6c43 }))
+    );
+    addEdges(folderFront);
+    folderFront.position.set(0, (FOLD_H - 0.16) / 2, 0.035);
+    folderTilt.add(folderFront);
+
+    // Loose sheets underneath — the pile the folder rides up on, and the
+    // reason its far edge sits proud of the desk.
+    const looseMat = [
+      new THREE.MeshLambertMaterial({ color: 0xf7f2e5 }),
+      new THREE.MeshLambertMaterial({ color: 0xefe8d6 }),
+      new THREE.MeshLambertMaterial({ color: 0xfbf8ef }),
+    ];
+    // Offset back under the folder's middle — the tilt group's panels sit
+    // roughly FOLD_H/2 behind folderG's origin once they're laid flat.
+    const PILE_Z = -FOLD_H / 2;
+    [
+      { x: -0.3, z: PILE_Z - 0.35, rot: 0.17, y: 0.015 },
+      { x: 0.34, z: PILE_Z + 0.28, rot: -0.21, y: 0.04 },
+      { x: -0.08, z: PILE_Z + 0.05, rot: 0.06, y: 0.065 },
+    ].forEach((s, i) => {
+      const sheet = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.015, 2.8), looseMat[i]);
+      addEdges(sheet);
+      sheet.position.set(s.x, s.y, s.z);
+      sheet.rotation.y = s.rot;
+      folderG.add(sheet);
+    });
+
+    // ─── Résumé overlay — the sheet pulled out of the folder ─
+    // A DOM layer rather than a mesh: the page is real selectable markup, so
+    // it can be highlighted and copied. The sheet starts folded in half
+    // across its middle (top half flipped face-down onto the bottom), rises
+    // from below the viewport, pauses with the fold just clear of the bottom
+    // edge, then swings the flap up and settles. Closing runs it backwards.
+    const RESUME_AR = 1842 / 2388;      // US Letter-ish page proportions
+    // Height-driven, but capped so a tall narrow window can't push the page
+    // wider than the viewport.
+    const SHEET_W = `min(${(88 * RESUME_AR).toFixed(2)}vh, 92vw)`;
+    const SHEET_H = `min(88vh, ${(92 / RESUME_AR).toFixed(2)}vw)`;
+    const RISE_MS = 620, FOLD_MS = 780;
+    // Folded, only the bottom half shows. 17% leaves that half's midpoint a
+    // little above the viewport's bottom edge before the flap opens.
+    const PAUSE_Y = 17;
+
+    let resumeOpen = false;
+    let resumeBusy = false;             // mid-animation — ignore further clicks
+    const resumeTimers: number[] = [];
+    const clearResumeTimers = () => { while (resumeTimers.length) clearTimeout(resumeTimers.pop()!); };
+
+    const resumeStyle = document.createElement("style");
+    resumeStyle.textContent = RESUME_CSS;
+    document.head.appendChild(resumeStyle);
+
+    const resumeLayer = document.createElement("div");
+    Object.assign(resumeLayer.style, {
+      position: "fixed", inset: "0", zIndex: "40",
+      display: "none", opacity: "0",
+      background: "rgba(10,8,5,0.66)",
+      transition: "opacity .42s ease",
+      perspective: "1800px",
+      cursor: "default",
+    } as CSSStyleDeclaration);
+
+    // Flex stage does the centring so the sheet can be sized with min().
+    const stage = document.createElement("div");
+    Object.assign(stage.style, {
+      position: "absolute", inset: "0",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      transformStyle: "preserve-3d",
+    } as CSSStyleDeclaration);
+    resumeLayer.appendChild(stage);
+
+    const sheet = document.createElement("div");
+    Object.assign(sheet.style, {
+      position: "relative", width: SHEET_W, height: SHEET_H, flex: "0 0 auto",
+      transformStyle: "preserve-3d",
+      transition: `transform ${RISE_MS}ms cubic-bezier(.22,.9,.28,1)`,
+      transform: "translateY(120%)",
+      fontSize: `calc(${SHEET_W} * 0.0156)`, // page type scales with the sheet
+    } as CSSStyleDeclaration);
+    stage.appendChild(sheet);
+
+    // The live, selectable page. Only this copy is ever interactive.
+    const docLive = document.createElement("div");
+    docLive.innerHTML = RESUME_HTML;
+    Object.assign(docLive.style, {
+      position: "absolute", inset: "0", display: "none",
+      boxShadow: "0 22px 60px rgba(0,0,0,.6)",
+    } as CSSStyleDeclaration);
+    sheet.appendChild(docLive);
+
+    // Fold stand-in — two clipped clones that only exist while it animates.
+    // user-select:none keeps them out of any selection the visitor makes.
+    const foldWrap = document.createElement("div");
+    Object.assign(foldWrap.style, {
+      position: "absolute", inset: "0", transformStyle: "preserve-3d",
+      userSelect: "none", WebkitUserSelect: "none",
+    } as CSSStyleDeclaration);
+    foldWrap.setAttribute("aria-hidden", "true");
+    sheet.appendChild(foldWrap);
+
+    // `half` clips a full-height clone down to one half of the page.
+    function pageHalf(which: "top" | "bottom") {
+      const clip = document.createElement("div");
+      Object.assign(clip.style, {
+        position: "absolute", left: "0", width: "100%", height: "50%",
+        top: which === "top" ? "0" : "50%",
+        overflow: "hidden",
+        boxShadow: "0 22px 60px rgba(0,0,0,.6)",
+      } as CSSStyleDeclaration);
+      const inner = document.createElement("div");
+      inner.innerHTML = RESUME_HTML;
+      Object.assign(inner.style, {
+        position: "absolute", left: "0", width: "100%", height: "200%",
+        top: which === "top" ? "0" : "-100%",
+      } as CSSStyleDeclaration);
+      clip.appendChild(inner);
+      return clip;
+    }
+
+    // Bottom half — fixed; the spine the flap hinges on
+    foldWrap.appendChild(pageHalf("bottom"));
+
+    // Top half — the flap. rotateX(-180°) is folded shut over the front of
+    // the bottom half, 0° is open.
+    const flap = document.createElement("div");
+    Object.assign(flap.style, {
+      position: "absolute", left: "0", top: "0", width: "100%", height: "50%",
+      transformStyle: "preserve-3d",
+      transformOrigin: "50% 100%",
+      transition: `transform ${FOLD_MS}ms cubic-bezier(.3,.86,.3,1)`,
+      transform: "rotateX(-180deg)",
+    } as CSSStyleDeclaration);
+    foldWrap.appendChild(flap);
+
+    const flapFront = pageHalf("top");
+    Object.assign(flapFront.style, {
+      top: "0", height: "100%", backfaceVisibility: "hidden",
+    } as CSSStyleDeclaration);
+    // Re-clip: inside the flap this box is the full flap height, and the
+    // clone within it still needs to be a whole page tall.
+    (flapFront.firstElementChild as HTMLElement).style.height = "200%";
+
+    const flapBack = document.createElement("div");
+    Object.assign(flapBack.style, {
+      position: "absolute", inset: "0", backfaceVisibility: "hidden",
+      // The extra 1px lifts the folded flap clear of the half it lands on —
+      // coplanar layers in a preserve-3d context z-fight otherwise.
+      transform: "rotateX(180deg) translateZ(1px)",
+      // Blank reverse of the page, shaded away from the crease
+      background: "linear-gradient(180deg, #fdfaf1 0%, #f7f2e6 66%, #efe7d6 100%)",
+      boxShadow: "0 22px 60px rgba(0,0,0,.6)",
+    } as CSSStyleDeclaration);
+    flap.append(flapFront, flapBack);
+
+    // Crease shadow along the fold line
+    const crease = document.createElement("div");
+    Object.assign(crease.style, {
+      position: "absolute", left: "0", top: "50%", width: "100%", height: "2.4%",
+      marginTop: "-1.2%", pointerEvents: "none", transform: "translateZ(2px)",
+      background: "linear-gradient(180deg, rgba(120,104,74,0) 0%, rgba(120,104,74,.2) 46%, rgba(255,255,255,.45) 54%, rgba(120,104,74,0) 100%)",
+      transition: "opacity .3s ease",
+    } as CSSStyleDeclaration);
+    sheet.appendChild(crease);
+
+    const resumeHint = document.createElement("div");
+    resumeHint.textContent = "select the text · click anywhere else to file it back ✦";
+    Object.assign(resumeHint.style, {
+      position: "absolute", left: "50%", bottom: "2.2vh", transform: "translateX(-50%) rotate(-1deg)",
+      background: "#f2df6d", color: "#2b2417",
+      padding: "7px 13px", font: "600 12px ui-monospace, Menlo, monospace",
+      boxShadow: "0 4px 14px rgba(0,0,0,.5)", pointerEvents: "none",
+      opacity: "0", transition: "opacity .3s ease .4s",
+    } as CSSStyleDeclaration);
+    resumeLayer.appendChild(resumeHint);
+    document.body.appendChild(resumeLayer);
+
+    // Swap the folding clones for the real page once it's flat, and back
+    // again before it folds — selection only ever touches the live copy.
+    function showLive(live: boolean) {
+      docLive.style.display = live ? "block" : "none";
+      foldWrap.style.display = live ? "none" : "block";
+      // The crease only belongs on a sheet that's still folded — once it's
+      // flat the page reads as a clean print.
+      crease.style.opacity = live ? "0" : "1";
+    }
+    showLive(false);
+
+    function openResume() {
+      if (resumeOpen || resumeBusy) return;
+      resumeOpen = true;
+      resumeBusy = true;
+      clearResumeTimers();
+      setHovered(null, 0, 0);      // drop the folder's hover chip and amber outline
+      folderPaper.visible = false; // the sheet left the folder
+      showLive(false);
+      resumeLayer.style.display = "block";
+      sheet.style.transform = "translateY(120%)";
+      flap.style.transform = "rotateX(-180deg)";
+      void sheet.offsetWidth; // commit the start pose before transitioning off it
+      resumeLayer.style.opacity = "1";
+      sheet.style.transform = `translateY(${PAUSE_Y}%)`;
+      resumeTimers.push(window.setTimeout(() => {
+        flap.style.transform = "rotateX(0deg)";
+        sheet.style.transform = "translateY(0%)";
+        resumeHint.style.opacity = "1";
+        resumeTimers.push(window.setTimeout(() => {
+          showLive(true);
+          resumeBusy = false;
+        }, FOLD_MS));
+      }, RISE_MS + 30));
+    }
+
+    function closeResume() {
+      if (!resumeOpen || resumeBusy) return;
+      resumeBusy = true;
+      clearResumeTimers();
+      resumeHint.style.opacity = "0";
+      showLive(false);
+      flap.style.transform = "rotateX(-180deg)";
+      sheet.style.transform = `translateY(${PAUSE_Y}%)`;
+      resumeTimers.push(window.setTimeout(() => {
+        sheet.style.transform = "translateY(120%)";
+        resumeLayer.style.opacity = "0";
+        resumeTimers.push(window.setTimeout(() => {
+          resumeLayer.style.display = "none";
+          folderPaper.visible = true; // back in the folder
+          resumeOpen = false;
+          resumeBusy = false;
+        }, RISE_MS));
+      }, FOLD_MS));
+    }
+
+    // Clicks land here rather than on the canvas; stopPropagation keeps the
+    // window-level scene handlers out of it.
+    function onResumeLayerClick(e: MouseEvent) {
+      e.stopPropagation();
+      // A drag that selected text often ends up targeting the backdrop —
+      // don't treat finishing a highlight as "put it away".
+      if (!window.getSelection()?.isCollapsed) return;
+      if (!sheet.contains(e.target as Node)) closeResume();
+    }
+    resumeLayer.addEventListener("click", onResumeLayerClick);
+
     // Live data swap-in
     fetch("/api/integrations")
       .then(r => r.json())
@@ -1572,8 +2051,8 @@ export default function Scene3D() {
     async function submitTerminal() {
       const q = termInput.trim();
       if (!q || termBusy) return;
-      // Saying hi to the terminal sends someone past the window.
-      if (/^(hey|hello)[\s!.?,]*$/i.test(q)) triggerWalker();
+      // Naming her to the terminal sends her past the window.
+      if (/^nikki[\s!.?,]*$/i.test(q)) triggerWalker();
       termInput = "";
       lastUserMsg = q;
       termBusy = true;
@@ -1693,29 +2172,6 @@ export default function Scene3D() {
 
     let overScreen = true;
 
-    function onPointerMove(e: MouseEvent) {
-      pointerVP.x = e.clientX / window.innerWidth;
-      pointerVP.y = e.clientY / window.innerHeight;
-      ndc.set(pointerVP.x * 2 - 1, -(pointerVP.y * 2 - 1));
-      raycaster.setFromCamera(ndc, camera);
-      const hit = raycaster.intersectObject(pickPlane, false)[0];
-      if (hit) {
-        const local = pickPlane.worldToLocal(hit.point.clone());
-        // On the screen itself → hide the OS cursor (the HUD arrow takes over).
-        // Off the screen → hand cursor, so clicks on "real-life" objects
-        // (radio, hardware) stay visible.
-        overScreen =
-          Math.abs(local.x) <= OPEN_W / 2 &&
-          Math.abs(local.y) <= OPEN_H / 2;
-        crt.cx = Math.max(0, Math.min(100, (local.x / OPEN_W + 0.5) * 100));
-        crt.cy = Math.max(0, Math.min(100, (0.5 - local.y / OPEN_H) * 100));
-      } else {
-        overScreen = false;
-      }
-      if (!screenOn) overScreen = false; // dark screen: nothing to point at
-      mount.style.cursor = overScreen ? "none" : "pointer";
-    }
-
     function isWithin(obj: THREE.Object3D, root: THREE.Object3D) {
       let cur: THREE.Object3D | null = obj;
       while (cur) {
@@ -1725,33 +2181,119 @@ export default function Scene3D() {
       return false;
     }
 
-    function onClick(e: MouseEvent) {
-      ndc.set((e.clientX / window.innerWidth) * 2 - 1, -((e.clientY / window.innerHeight) * 2 - 1));
+    // ─── Hover highlight on the real-world clickables ────────
+    // Every prop already carries dark edge lines from addEdges(). Each
+    // clickable gets its own line material instead of the shared one, so
+    // hovering can ease that outline from OUTLINE up to the amber accent —
+    // an actual highlight around the object, not just a hand cursor. A small
+    // scale pop and a label chip ride along.
+    type Clickable = {
+      root: THREE.Object3D;
+      label: () => string;
+      act: () => void;
+      pop: number;                      // extra scale at full hover
+      mat: THREE.LineBasicMaterial;
+      t: number;                        // 0..1 eased hover amount
+    };
+    const HL_BASE = new THREE.Color(OUTLINE);
+    const HL_HOT = new THREE.Color(S_ACCENT);
+
+    function makeClickable(root: THREE.Object3D, label: () => string, act: () => void, pop: number): Clickable {
+      const mat = new THREE.LineBasicMaterial({ color: OUTLINE });
+      root.traverse((o) => {
+        if ((o as THREE.LineSegments).isLineSegments) (o as THREE.LineSegments).material = mat;
+      });
+      return { root, label, act, pop, mat, t: 0 };
+    }
+
+    const clickables: Clickable[] = [
+      makeClickable(powerButton, () => (screenOn ? "power off" : "power on"), () => {
+        screenOn = !screenOn;
+        if (screenOn) reboot(); // powering back on re-runs the LamOS splash
+      }, 0.16),
+      makeClickable(folderG, () => "open résumé", () => openResume(), 0.03),
+      makeClickable(radio, () => (radioPlaying ? "pause" : "play my top tracks"), () => toggleRadio(), 0.025),
+      makeClickable(calendarG, () => "book a call", () => {
+        // The prism's Book Now — opens the real Calendly page
+        window.open(integrations.calendly?.bookUrl ?? "https://calendly.com", "_blank", "noopener");
+      }, 0.025),
+    ];
+
+    // Clickables plus everything that can stand in front of them, so clicking
+    // the desk ahead of the radio doesn't reach through it.
+    const pickTargets: THREE.Object3D[] = [
+      desk, mousepad, keyboard, mouse3d, monitor, radio, calendarG, streakG, folderG,
+    ];
+
+    function pickClickable(clientX: number, clientY: number): Clickable | null {
+      ndc.set((clientX / window.innerWidth) * 2 - 1, -((clientY / window.innerHeight) * 2 - 1));
       raycaster.setFromCamera(ndc, camera);
-      // First-hit test against the clickable objects AND their occluders, so
-      // clicking the desk in front of the radio doesn't reach through it.
-      const hits = raycaster.intersectObjects([desk, mousepad, keyboard, mouse3d, monitor, radio, calendarG, streakG], true);
+      const hits = raycaster.intersectObjects(pickTargets, true);
       // Skip the invisible pointer pick-plane (a huge monitor child) — it
-      // otherwise swallows every click before it can reach the radio.
+      // otherwise swallows every hit before it can reach the props.
       const first = hits.find(h => h.object !== pickPlane && (h.object as THREE.Mesh).isMesh && h.object.visible)?.object;
-      if (first) {
-        if (isWithin(first, powerButton)) {
-          screenOn = !screenOn;
-          if (screenOn) reboot(); // powering back on re-runs the LamOS splash
-          return;
-        }
-        if (isWithin(first, radio)) { toggleRadio(); return; }
-        if (isWithin(first, calendarG)) {
-          // The prism's Book Now — opens the real Calendly page
-          window.open(integrations.calendly?.bookUrl ?? "https://calendly.com", "_blank", "noopener");
-          return;
-        }
+      if (!first) return null;
+      return clickables.find(c => isWithin(first, c.root)) ?? null;
+    }
+
+    let hovered: Clickable | null = null;
+
+    const hoverTip = document.createElement("div");
+    Object.assign(hoverTip.style, {
+      position: "fixed", left: "0", top: "0", zIndex: "20", pointerEvents: "none",
+      transform: "translate(16px, 18px)", whiteSpace: "nowrap",
+      background: "#f2df6d", color: "#2b2417",
+      padding: "5px 9px", font: "600 12px ui-monospace, Menlo, monospace",
+      boxShadow: "0 3px 12px rgba(0,0,0,.45)",
+      opacity: "0", transition: "opacity .12s ease",
+    } as CSSStyleDeclaration);
+    document.body.appendChild(hoverTip);
+
+    function setHovered(next: Clickable | null, clientX: number, clientY: number) {
+      hovered = next;
+      if (next) {
+        hoverTip.textContent = next.label();
+        hoverTip.style.left = `${clientX}px`;
+        hoverTip.style.top = `${clientY}px`;
       }
+      hoverTip.style.opacity = next ? "1" : "0";
+    }
+
+    function onPointerMove(e: MouseEvent) {
+      if (resumeOpen) { setHovered(null, 0, 0); return; }
+      pointerVP.x = e.clientX / window.innerWidth;
+      pointerVP.y = e.clientY / window.innerHeight;
+      ndc.set(pointerVP.x * 2 - 1, -(pointerVP.y * 2 - 1));
+      raycaster.setFromCamera(ndc, camera);
+      const hit = raycaster.intersectObject(pickPlane, false)[0];
+      if (hit) {
+        const local = pickPlane.worldToLocal(hit.point.clone());
+        // On the screen itself → hide the OS cursor (the HUD arrow takes over).
+        overScreen =
+          Math.abs(local.x) <= OPEN_W / 2 &&
+          Math.abs(local.y) <= OPEN_H / 2;
+        crt.cx = Math.max(0, Math.min(100, (local.x / OPEN_W + 0.5) * 100));
+        crt.cy = Math.max(0, Math.min(100, (0.5 - local.y / OPEN_H) * 100));
+      } else {
+        overScreen = false;
+      }
+      if (!screenOn) overScreen = false; // dark screen: nothing to point at
+      // Off the screen, only an actual clickable gets the hand — everything
+      // else keeps the plain arrow instead of pretending the desk is a button.
+      setHovered(overScreen ? null : pickClickable(e.clientX, e.clientY), e.clientX, e.clientY);
+      mount.style.cursor = overScreen ? "none" : hovered ? "pointer" : "default";
+    }
+
+    function onClick(e: MouseEvent) {
+      if (resumeOpen) return; // the overlay owns the pointer while it's up
+      const target = pickClickable(e.clientX, e.clientY);
+      if (target) { target.act(); return; }
       if (screenOn && overScreen) {
         handleScreenClick(crt.cx / 100 * HUD_W, crt.cy / 100 * HUD_H);
       }
     }
     function onMouseDown(e: MouseEvent) {
+      if (resumeOpen) return;
       if (e.button === 0) buttons.left = true;
       if (e.button === 2) {
         buttons.right = true;
@@ -1766,6 +2308,11 @@ export default function Scene3D() {
     }
     function onContextMenu(e: MouseEvent) { e.preventDefault(); }
     function onKeyDown(e: KeyboardEvent) {
+      // While the résumé is up it swallows input; Escape files it back.
+      if (resumeOpen) {
+        if (e.key === "Escape") closeResume();
+        return;
+      }
       pressedCodes.add(e.code);
       // Terminal input capture — only while lets_chat.exe is open
       if (openPage === "chat" && screenOn) {
@@ -1780,7 +2327,7 @@ export default function Scene3D() {
 
     // Scroll the open window's content (chat manages its own layout)
     function onWheel(e: WheelEvent) {
-      if (screenOn && overScreen && openPage && openPage !== "chat") {
+      if (!resumeOpen && screenOn && overScreen && openPage && openPage !== "chat") {
         pageScroll = Math.max(0, Math.min(pageMax, pageScroll + e.deltaY));
       }
     }
@@ -2047,115 +2594,66 @@ export default function Scene3D() {
       return y + 30;
     }
 
-    function paintWork() {
-      let y = 16;
+    function paintHowTo() {
+      let y = 24;
+      hud.textAlign = "center";
       hud.textBaseline = "middle";
-      hud.textAlign = "left";
-      hud.font = `500 17px ${MONO}`;
+      hud.font = `700 30px ${MONO}`;
+      hud.fillStyle = S_ACCENT;
+      hud.fillText("✦ HOW_TO.TXT ✦", HUD_W / 2, y); y += 46;
+      hud.font = `500 19px ${MONO}`;
       hud.fillStyle = S_DIM;
-      hud.fillText("C:\\adrian\\resume.doc", 84, y); y += 42;
+      hud.fillText("everything in this room does something. go poke it.", HUD_W / 2, y);
+      y += 30;
+      hud.fillStyle = S_LINE;
+      hud.fillRect(120, y, HUD_W - 240, 2); y += 40;
 
-      function drawCard(role: string, co: string, when: string, pts: string[]) {
-        hud.font = `500 19px ${MONO}`;
-        const wrapMaxW = HUD_W - 220; // clears the box's right edge with room to spare
-        const wrapped = pts.map(p => wrapLines(p, wrapMaxW));
-        const totalLines = wrapped.reduce((s, ls) => s + ls.length, 0);
-        const LINE_H = 25;
-        const h = 52 + totalLines * LINE_H + 12;
-        hud.strokeStyle = "#3a342a";
-        hud.lineWidth = 2;
-        hud.strokeRect(60, y, HUD_W - 120, h);
-        hud.textAlign = "left";
-        hud.font = `700 23px ${MONO}`;
-        hud.fillStyle = S_ACCENT;
-        hud.fillText(role, 84, y + 30);
-        const rw = hud.measureText(role).width;
-        hud.font = `500 20px ${MONO}`;
-        hud.fillStyle = S_INK;
-        hud.fillText(`@ ${co}`, 84 + rw + 14, y + 30);
-        hud.textAlign = "right";
-        hud.font = `500 17px ${MONO}`;
-        hud.fillStyle = S_DIM;
-        hud.fillText(when, HUD_W - 84, y + 30);
-        hud.textAlign = "left";
-        hud.font = `500 19px ${MONO}`;
-        hud.fillStyle = S_INK;
-        let by = y + 62;
-        wrapped.forEach(lines => {
-          lines.forEach((line, li) => {
-            hud.fillText((li === 0 ? "▸ " : "   ") + line, 100, by);
-            by += LINE_H;
+      // One line per thing, wrapped against the window's width.
+      function entries(rows: readonly (readonly [string, string])[]) {
+        const LABEL_X = 104, TEXT_X = 366, LINE_H = 25;
+        rows.forEach(([label, text]) => {
+          hud.textAlign = "left";
+          hud.font = `700 18px ${MONO}`;
+          hud.fillStyle = S_ACCENT;
+          hud.fillText(`· ${label}`, LABEL_X, y);
+          hud.font = `500 19px ${MONO}`;
+          hud.fillStyle = S_INK;
+          const lines = wrapLines(text, HUD_W - TEXT_X - 84);
+          lines.forEach((line, i) => {
+            hud.fillText(line, TEXT_X, y + i * LINE_H);
           });
+          y += Math.max(1, lines.length) * LINE_H + 9;
         });
-        y += h + 18;
+        y += 18;
       }
 
-      const jobs = [
-        {
-          role: "Data Scientist, Generative AI", co: "Asurion", when: "current",
-          pts: [
-            "built a multi-agent customer-support system on the Claude Agent SDK — subagent orchestrator + dynamic context injection",
-            "evaluated it turn-by-turn against the legacy system, winning a large majority of head-to-head comparisons",
-            "also shipped a 21-agent knowledge assistant, a vision-model eval harness, and a fine-tuned voice turn-detector",
-          ],
-        },
-        {
-          role: "ML Engineer Intern", co: "Asurion", when: "internship",
-          pts: [
-            "led a team of 4 building a GraphRAG pipeline for multi-step reasoning",
-            "built an AWS Lex/Connect voice chatbot",
-            "ran MLOps benchmarking with Docker + CI/CD",
-          ],
-        },
-        {
-          role: "Data Science Intern", co: "Towngas", when: "internship",
-          pts: [
-            "PySpark ETL over a large production database",
-            "built an XGBoost dispatch classifier",
-          ],
-        },
-      ];
-      for (const job of jobs) drawCard(job.role, job.co, job.when, job.pts);
-      y += 12;
+      y = sectionHeader(">> stuff on the desk", y);
+      entries([
+        ["radio", "press it to play whatever I've had on repeat on Spotify lately."],
+        ["résumé folder", "click it and the page slides out and unfolds — the text is real, so highlight it."],
+        ["desk calendar", "click it to grab a slot on my actual Calendly."],
+        ["power button", "bottom-left of the monitor's bezel, kills the screen and reboots LamOS on the way back."],
+        ["gym counter", "days since I last touched a barbell, pulled live from Hevy and rarely flattering."],
+      ]);
 
-      y = sectionHeader(">> research", y);
-      drawCard(
-        "Research Assistant", "UCLA Sensing & Robotics for Infrastructure Lab", "",
-        [
-          "built a street-network graph weighted by betweenness centrality for LA's hillside-streets prioritization tool",
-          "combined it with 18 months of field condition survey data into a rankable, equity-aware capital-priority tool",
-          "recognized with an LA City Council commendation",
-        ],
-      );
-      y += 12;
+      y = sectionHeader(">> stuff on the screen", y);
+      entries([
+        ["about me", "the short version of who I am, plus a visitor counter I refuse to remove."],
+        ["how_to", "you are here."],
+        ["personal projects", "things I built because I wanted them to exist."],
+        ["extras", "a photo dump with captions, hover a photo to read one."],
+        ["let's chat.exe", "talk to the little guy made of particles — he answers as me."],
+      ]);
 
-      y = sectionHeader(">> education", y);
-      hud.font = `500 19px ${MONO}`;
-      hud.fillStyle = S_INK;
-      hud.fillText("University of San Francisco — M.S. Data Science", 104, y); y += 30;
-      hud.fillText("UCLA — B.S. Mathematics of Computation", 104, y);
-      y += 48;
+      y = sectionHeader(">> good to know", y);
+      entries([
+        ["lean in", "right-click (or two-finger click) anywhere to pull up to the screen, then again to lean back."],
+        ["your hardware", "the keyboard and mouse on the desk mirror the ones under your hands."],
+        ["scrolling", "spin the wheel to move whichever window is open."],
+        ["the window", "the sky out there tracks New York's actual time of day."],
+        ["say her name", "type \"nikki\" to the terminal, then keep an eye on the window."],
+      ]);
 
-      y = sectionHeader(">> skills", y);
-      const skills = [
-        "python", "sql", "pytorch", "langchain", "pyspark", "claude agent sdk",
-        "aws", "docker", "git & ci/cd", "fastapi", "typescript", "react", "onnx", "faiss",
-      ];
-      hud.font = `500 18px ${MONO}`;
-      hud.textAlign = "left";
-      const CHIP_H = 34, CHIP_PAD = 14, CHIP_GAP = 10, rowMaxX = HUD_W - 84;
-      let cx = 104;
-      skills.forEach(name => {
-        const w = hud.measureText(name).width + CHIP_PAD * 2;
-        if (cx + w > rowMaxX) { cx = 104; y += CHIP_H + 10; }
-        hud.strokeStyle = "#3a342a";
-        hud.lineWidth = 2;
-        hud.strokeRect(cx, y - CHIP_H / 2, w, CHIP_H);
-        hud.fillStyle = S_INK;
-        hud.fillText(name, cx + CHIP_PAD, y + 1);
-        cx += w + CHIP_GAP;
-      });
-      y += CHIP_H + 20;
       return y + 10;
     }
 
@@ -2349,7 +2847,7 @@ export default function Scene3D() {
       hud.translate(0, TITLE_H + 24 - pageScroll);
       let bottom = 0;
       if (id === "about") bottom = paintAbout(now);
-      else if (id === "work") bottom = paintWork();
+      else if (id === "howto") bottom = paintHowTo();
       else if (id === "projects") bottom = paintProjects(px, py);
       else bottom = paintExtras(now, px, py);
       hud.restore();
@@ -2416,6 +2914,7 @@ export default function Scene3D() {
         // ── Speech bubbles ──
         hud.textAlign = "left";
         hud.font = "500 21px ui-monospace, Menlo, monospace";
+        const LINE_H = 32; // bubble line spacing — loose enough to read on the CRT
         const wrap = (text: string, maxW: number) => {
           const out: string[] = [];
           for (const para of text.split("\n")) {
@@ -2435,14 +2934,14 @@ export default function Scene3D() {
           const uLines = wrap(lastUserMsg, 480);
           const uw = Math.min(480, Math.max(...uLines.map(l => hud.measureText(l).width))) + 32;
           const ux = HUD_W - 24 - uw;
-          const uh = uLines.length * 27 + 22;
+          const uh = uLines.length * LINE_H + 22;
           hud.fillStyle = "rgba(232,197,71,0.07)";
           hud.fillRect(ux, TITLE_H + 14, uw, uh);
           hud.strokeStyle = S_DIM;
           hud.lineWidth = 2;
           hud.strokeRect(ux, TITLE_H + 14, uw, uh);
           hud.fillStyle = S_INK;
-          uLines.forEach((l, i) => hud.fillText(l, ux + 16, TITLE_H + 32 + i * 27));
+          uLines.forEach((l, i) => hud.fillText(l, ux + 16, TITLE_H + 32 + i * LINE_H));
         }
 
         // Bot speech bubble — tail pointing at the particle face (screen-left)
@@ -2453,7 +2952,7 @@ export default function Scene3D() {
           ? wrap(shown + (typing ? "▋" : ""), BW - 36)
           : [termBusy ? "•".repeat(1 + (Math.floor(now / 300) % 3)) : ""];
         if (bLines[0] !== "") {
-          const bh = bLines.length * 27 + 26;
+          const bh = bLines.length * LINE_H + 26;
           const by = Math.max(TITLE_H + 40, Math.min(FY - bh / 2, HUD_H - 200 - bh));
           hud.fillStyle = "rgba(23,19,14,0.96)";
           hud.fillRect(BX, by, BW, bh);
@@ -2472,7 +2971,7 @@ export default function Scene3D() {
           hud.moveTo(BX + 1, ty - 12); hud.lineTo(BX - 22, ty); hud.lineTo(BX + 1, ty + 12);
           hud.stroke();
           hud.fillStyle = S_INK;
-          bLines.forEach((l, i) => hud.fillText(l, BX + 18, by + 22 + i * 27));
+          bLines.forEach((l, i) => hud.fillText(l, BX + 18, by + 22 + i * LINE_H));
         }
 
         // ── Chatbox — bottom aligned ──
@@ -2730,6 +3229,21 @@ export default function Scene3D() {
       const mz = 1.9 + pointerVP.y * (3.7 - 1.9);
       mouse3d.position.set(mx, DESK_Y, mz);
       mouse3d.rotation.y = -((pointerVP.x - 0.5) * 0.24 - (pointerVP.y - 0.5) * 0.09);
+      // ── Hover highlight: outlines ease to amber, the prop pops a hair ──
+      for (const c of clickables) {
+        const target = c === hovered ? 1 : 0;
+        if (Math.abs(c.t - target) < 0.002) c.t = target;
+        else c.t += (target - c.t) * 0.22;
+        if (c.t > 0) {
+          // Amber pulses a touch while held, so a hovered prop reads as live
+          const pulse = 0.86 + 0.14 * Math.sin(now / 190);
+          c.mat.color.copy(HL_BASE).lerp(HL_HOT, c.t * pulse);
+        } else {
+          c.mat.color.copy(HL_BASE);
+        }
+        c.root.scale.setScalar(1 + c.pop * c.t);
+      }
+
       // Radio button: sinks into the side while playing, pops back out when paused
       const btnTargetX = radioPlaying ? RADIO_BTN_IN : RADIO_BTN_OUT;
       radioButton.position.x += (btnTargetX - radioButton.position.x) * 0.25;
@@ -2809,6 +3323,11 @@ export default function Scene3D() {
     return () => {
       cancelAnimationFrame(raf);
       clearInterval(skyInterval);
+      clearResumeTimers();
+      resumeLayer.removeEventListener("click", onResumeLayerClick);
+      resumeLayer.remove();
+      resumeStyle.remove();
+      hoverTip.remove();
       embedController?.destroy?.();
       embedDiv.remove();
       embedScript.remove();
