@@ -388,9 +388,11 @@ export default function Scene3D() {
         // Face slides up past the pane, overshoots into a pop, holds, sinks
         if (!nikkiReady) return;
         const iw = 216, ih = iw * (nikkiImg.height / nikkiImg.width);
-        // Rest so the whole image sits inside the pane — the bottom used to
-        // run off past the sill.
-        const restY = Math.max(8, H - 12 - ih);
+        // A peek, not a reveal: only the top of her head and her eyes clear
+        // the sill, the rest stays below the frame. The eyes sit ~36% down the
+        // source image, so this stops just past them.
+        const PEEK_FRAC = 0.45;
+        const restY = H - ih * PEEK_FRAC;
         const hiddenY = H + 10;    // fully below the view
         let top: number;
         if (tt < W_POP) {
