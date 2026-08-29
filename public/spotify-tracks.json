@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-28T19:53:36.141Z",
+  "updatedAt": "2026-08-29T13:37:21.048Z",
   "topTracks": [
     {
       "id": "22NHkFYbgxB2Zirj29Gbp8",
@@ -32,18 +32,6 @@
       "artist": "Phoebe Bridgers"
     },
     {
-      "id": "3iy2QuCtCzpWnR6tia39AB",
-      "uri": "spotify:track:3iy2QuCtCzpWnR6tia39AB",
-      "name": "hate that i made you love me",
-      "artist": "Ariana Grande"
-    },
-    {
-      "id": "0lok0VDJn0zRvHLBCITSSw",
-      "uri": "spotify:track:0lok0VDJn0zRvHLBCITSSw",
-      "name": "kiss me",
-      "artist": "Ariana Grande"
-    },
-    {
       "id": "2itxcGh2MqEGswuXdeRlLL",
       "uri": "spotify:track:2itxcGh2MqEGswuXdeRlLL",
       "name": "The Outside",
@@ -60,6 +48,18 @@
       "uri": "spotify:track:5Fdj0DtH4ZhymltyN5xEv2",
       "name": "Camera",
       "artist": "Charli xcx"
+    },
+    {
+      "id": "5zYrrz1QNFfUHYaSKtNooJ",
+      "uri": "spotify:track:5zYrrz1QNFfUHYaSKtNooJ",
+      "name": "DIVA",
+      "artist": "judith"
+    },
+    {
+      "id": "3iy2QuCtCzpWnR6tia39AB",
+      "uri": "spotify:track:3iy2QuCtCzpWnR6tia39AB",
+      "name": "hate that i made you love me",
+      "artist": "Ariana Grande"
     }
   ]
 }
