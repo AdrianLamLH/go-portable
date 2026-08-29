@@ -459,6 +459,33 @@ export default function Scene3D() {
     sash.add(saTop, saBot, saL, saR, saMull);
     windowGroup.add(sash);
 
+    // ─── Light switch on the wall, right of the window ───────
+    // Yellow rocker: a flat square plate with an upright rocker set into it,
+    // both the same plastic. The wall face is at z = -4.25, so the plate's back
+    // sits flush against it.
+    let lightsOn = false; // room starts on daylight alone
+    const SW_YELLOW = 0xf2c313;
+    const matSwitch = new THREE.MeshLambertMaterial({ color: SW_YELLOW });
+    const lightSwitch = new THREE.Group();
+    lightSwitch.position.set(8.55, 3.0, -4.22); // plate's back sits flush to the wall
+    scene.add(lightSwitch);
+
+    // Flat square faceplate — solid, no opening.
+    const swPlate = box(0.62, 0.62, 0.06, matSwitch);
+
+    // Upright rectangular rocker, hinged about its own centre and sunk into the
+    // plate rather than standing off it: as it tips, the lowered half passes
+    // into the solid plate and is simply hidden, which reads as a recess. At
+    // rest the raised half stands 0.07 proud while the lowered edge sits level
+    // with the plate face.
+    const swBtn = box(0.36, 0.46, 0.05, matSwitch);
+    swBtn.position.z = 0.04;
+    swBtn.rotation.x = 0.16; // resting in the off tilt on the first frame
+    lightSwitch.add(swPlate, swBtn);
+
+    // The bulb this drives lives up at the ceiling fan — see below, where the
+    // fan is built, since it takes its position from the hub.
+
     // ─── Poster on the wall, left of the monitor ─────────────
     function createPosterTexture() {
       const c = document.createElement("canvas");
@@ -663,11 +690,13 @@ export default function Scene3D() {
 
     // ─── Ceiling fan — hangs out of frame, its shadow sweeps the desk ─
     const fan = new THREE.Group();
-    // Sits out in the room — further from the wall than the monitor — but the
-    // key light rakes in at about 34°, so pushing it much further forward
-    // throws the blade shadow off the poster entirely. This is the spot where
-    // both hold: the sweep still crosses the print.
-    fan.position.set(0.0, 7.6, 2.8);
+    // Out over the room, well clear of both the wall (z -4.25) and the monitor
+    // (z 1.1) — a bulb sitting near either one lights that surface instead of
+    // the room. +z is toward the viewer, so this is forward of the desk.
+    // The key light rakes in at about 34°, so the blade shadow lands wherever
+    // the fan does: from here the sweep crosses the calendar and the desk
+    // rather than the poster. Move the fan and that sweep moves with it.
+    fan.position.set(0.0, 7.6, 7.0);
     scene.add(fan);
     const fanMat = new THREE.MeshLambertMaterial({ color: 0x6b5f4a });
     const fanHub = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.3, 10), fanMat);
@@ -681,6 +710,26 @@ export default function Scene3D() {
       blade.castShadow = true;
       fan.add(blade);
     }
+
+    // ─── The fan's bulb — driven by the wall switch, off by default ──
+    // Two parts on purpose. A lone point light in an otherwise dark room reads
+    // as a spotlight: a bright pool on the desk and corners left black. The
+    // point light gives direction and shading, the hemisphere lifts everything
+    // evenly so the room actually feels lit. Both ease in the animate loop.
+    //
+    // Physical light units: a point light contributes intensity / distance^decay,
+    // and from the ceiling it's ~6.5 units to the desk, so it needs tens of
+    // candela to register against the hemisphere (0.85) and sun (1.05) already
+    // in the scene. The CRT glow gets away with 0.55 only because it sits inches
+    // off the keyboard. decay 1.25 (under the physical 2) keeps the far corners
+    // from falling away.
+    const roomLight = new THREE.PointLight(0xffdcb4, 0, 46, 1.2);
+    roomLight.position.copy(fan.position); // dead centre of the hub
+    scene.add(roomLight);
+    const roomFill = new THREE.HemisphereLight(0xffe7d0, 0x6a5a44, 0);
+    scene.add(roomFill);
+    const ROOM_LIGHT_MAX = 48; // +4 offsets the extra throw from moving the fan out
+    const ROOM_FILL_MAX = 0.85;
 
     // ─── Mousepad ────────────────────────────────────────────
     const mousepad = new THREE.Mesh(
@@ -711,12 +760,28 @@ export default function Scene3D() {
     const barW = (OUTER_W - OPEN_W) / 2;
     const bezelMat = paintedMat("/textures/monitor-bezel.png", CREAM);
     const uBar = barW / OUTER_W, vBar = barH / OUTER_H;
+    // No per-bar edges: the four bars butt together, so a box wireframe each
+    // drew seams straight across all four corners of the opening. The bezel
+    // gets two clean rectangles instead (outer silhouette + screen opening).
     function bezelBar(w: number, h: number, u0: number, v0: number, u1: number, v1: number) {
       const geo = new THREE.BoxGeometry(w, h, FRAME_D);
       remapFaceUV(geo, 4, u0, v0, u1, v1);
       const m = new THREE.Mesh(geo, faceMats(4, bezelMat, matCream));
-      addEdges(m);
+      m.castShadow = true;
+      m.receiveShadow = true;
       return m;
+    }
+    // Front face of the bars sits at z = FRAME_D; nudge the lines just clear of
+    // it so they don't z-fight with the bezel texture.
+    function frameOutline(w: number, h: number) {
+      const z = FRAME_D + 0.004;
+      const geo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-w / 2, -h / 2, z),
+        new THREE.Vector3(w / 2, -h / 2, z),
+        new THREE.Vector3(w / 2, h / 2, z),
+        new THREE.Vector3(-w / 2, h / 2, z),
+      ]);
+      return new THREE.LineLoop(geo, edgeMat);
     }
     const topBar = bezelBar(OUTER_W, barH, 0, 1 - vBar, 1, 1);
     topBar.position.set(0, OPEN_H / 2 + barH / 2, FRAME_D / 2);
@@ -726,7 +791,9 @@ export default function Scene3D() {
     leftBar.position.set(-(OPEN_W / 2 + barW / 2), 0, FRAME_D / 2);
     const rightBar = bezelBar(barW, OPEN_H, 1 - uBar, vBar, 1, 1 - vBar);
     rightBar.position.set(OPEN_W / 2 + barW / 2, 0, FRAME_D / 2);
-    monitor.add(topBar, botBar, leftBar, rightBar);
+    const bezelOuterLine = frameOutline(OUTER_W, OUTER_H);
+    const bezelOpenLine = frameOutline(OPEN_W, OPEN_H);
+    monitor.add(topBar, botBar, leftBar, rightBar, bezelOuterLine, bezelOpenLine);
     // Stand
     const neck = box(0.9, 0.6, 0.8);
     neck.position.set(0, -OUTER_H / 2 - 0.3, -0.5);
@@ -2248,12 +2315,16 @@ export default function Scene3D() {
         // The prism's Book Now — opens the real Calendly page
         window.open(integrations.calendly?.bookUrl ?? "https://calendly.com", "_blank", "noopener");
       }, 0.025),
+      makeClickable(lightSwitch, () => (lightsOn ? "turn lights off" : "turn lights on"), () => {
+        lightsOn = !lightsOn;
+      }, 0.04),
     ];
 
     // Clickables plus everything that can stand in front of them, so clicking
     // the desk ahead of the radio doesn't reach through it.
     const pickTargets: THREE.Object3D[] = [
       desk, mousepad, keyboard, mouse3d, monitor, radio, calendarG, streakG, folderG,
+      lightSwitch,
     ];
 
     function pickClickable(clientX: number, clientY: number): Clickable | null {
@@ -2272,7 +2343,10 @@ export default function Scene3D() {
     const hoverTip = document.createElement("div");
     Object.assign(hoverTip.style, {
       position: "fixed", left: "0", top: "0", zIndex: "20", pointerEvents: "none",
-      transform: "translate(16px, 18px)", whiteSpace: "nowrap",
+      // Sits to the left of the cursor — -100% pulls it back by its own width,
+      // so the chip's right edge trails the pointer instead of covering what's
+      // under it.
+      transform: "translate(calc(-100% - 14px), 18px)", whiteSpace: "nowrap",
       background: "#f2df6d", color: "#2b2417",
       padding: "5px 9px", font: "600 12px ui-monospace, Menlo, monospace",
       boxShadow: "0 3px 12px rgba(0,0,0,.45)",
@@ -2318,7 +2392,14 @@ export default function Scene3D() {
     function onClick(e: MouseEvent) {
       if (resumeOpen) return; // the overlay owns the pointer while it's up
       const target = pickClickable(e.clientX, e.clientY);
-      if (target) { target.act(); return; }
+      if (target) {
+        target.act();
+        // Labels read live state ("turn lights on" / "off"), and the chip is
+        // only rebuilt on pointer move — so refresh it here or it sits stale
+        // under a cursor that hasn't moved since the click.
+        setHovered(target, e.clientX, e.clientY);
+        return;
+      }
       if (screenOn && overScreen) {
         handleScreenClick(crt.cx / 100 * HUD_W, crt.cy / 100 * HUD_H);
       }
@@ -2524,7 +2605,8 @@ export default function Scene3D() {
       const shellSwaps: ShellSwap[] = [
         {
           file: "monitor-shell.glb", group: monitor,
-          hide: () => [body, topBar, botBar, leftBar, rightBar, neck, foot],
+          hide: () => [body, topBar, botBar, leftBar, rightBar, neck, foot,
+                       bezelOuterLine, bezelOpenLine],
           after: (root) => {
             const btn = findNamed(root, /power/i);
             if (btn) {
@@ -3495,6 +3577,14 @@ export default function Scene3D() {
       screenPlane.visible = screenOn;
       hudPlane.visible = screenOn;
       crtGlow.intensity += ((screenOn ? 0.55 : 0) - crtGlow.intensity) * 0.15;
+
+      // Light switch: the rocker pivots about its middle — top half out when
+      // off, bottom half out when on — and the warm bulb fades with it, so the
+      // room warms up instead of snapping.
+      const rockTarget = lightsOn ? -0.16 : 0.16;
+      swBtn.rotation.x += (rockTarget - swBtn.rotation.x) * 0.3;
+      roomLight.intensity += ((lightsOn ? ROOM_LIGHT_MAX : 0) - roomLight.intensity) * 0.12;
+      roomFill.intensity += ((lightsOn ? ROOM_FILL_MAX : 0) - roomFill.intensity) * 0.12;
 
       (btnL.material as THREE.Material) = buttons.left ? matCreamDark : matCream;
       (btnR.material as THREE.Material) = buttons.right ? matCreamDark : matCream;
