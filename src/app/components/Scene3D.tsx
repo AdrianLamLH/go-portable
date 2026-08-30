@@ -17,9 +17,9 @@ type SphereMode = "lattice" | "terminal";
 type PageId = "about" | "howto" | "projects" | "extras" | "chat";
 
 // LamOS desktop — icons boot in after the splash screen
-const DESKTOP_ICONS: { id: PageId; label: string; kind: "folder" | "exe" }[] = [
+const DESKTOP_ICONS: { id: PageId; label: string; kind: "folder" | "doc" | "exe" }[] = [
   { id: "about", label: "about me", kind: "folder" },
-  { id: "howto", label: "how_to", kind: "folder" },
+  { id: "howto", label: "how_to.svg", kind: "doc" },
   { id: "projects", label: "personal projects", kind: "folder" },
   { id: "extras", label: "extras", kind: "folder" },
   { id: "chat", label: "let's chat.exe", kind: "exe" },
@@ -27,7 +27,7 @@ const DESKTOP_ICONS: { id: PageId; label: string; kind: "folder" | "exe" }[] = [
 
 const WINDOW_TITLES: Record<PageId, string> = {
   about: "about_me",
-  howto: "how_to.txt",
+  howto: "how_to.svg",
   projects: "personal_projects",
   extras: "extras",
   chat: "lets_chat.exe",
@@ -320,6 +320,30 @@ export default function Scene3D() {
     let nikkiReady = false;
     nikkiImg.onload = () => { nikkiReady = true; };
 
+    // ─── how_to manual plates ────────────────────────────────
+    // The desk diagram is the very same SVG that lives in design/, so edits
+    // made there (or round-tripped through Figma) flow straight onto the CRT.
+    // The screens are 1-bit photocopies of the real pages.
+    const manualArt: Record<string, HTMLImageElement> = {};
+    const MANUAL_FILES = {
+      diagram: "desk-diagram.svg", boot: "boot.png", about: "about.png",
+      projects: "projects.png", extras: "extras.png", chat: "chat.png",
+    };
+    for (const [key, file] of Object.entries(MANUAL_FILES)) {
+      const img = new Image();
+      img.src = `/manual/${file}`;
+      manualArt[key] = img;
+    }
+    const artReady = (k: string) => manualArt[k]?.complete && manualArt[k].naturalWidth > 0;
+
+    // Canvas text never triggers a webfont fetch on its own, so the manual's two
+    // faces get pulled in by hand. The CRT repaints every frame, so the copy
+    // simply re-sets itself in Inter the moment they land.
+    for (const face of ["400 16px Inter", "600 16px Inter", "700 16px Inter",
+                        "400 16px 'Roboto Mono'", "700 16px 'Roboto Mono'"]) {
+      document.fonts?.load(face).catch(() => {});
+    }
+
     function triggerWalker() {
       walkerActive = true;
       walkerStart = performance.now();
@@ -574,21 +598,36 @@ export default function Scene3D() {
       img.src = url;
     }
 
+    let disposed = false; // stops deferred loads and sliced gif decoding after unmount
+
     // ─── Media for the personal-projects & extras HUD pages ───────
+    // Several megabytes of photos and gifs that nothing needs until a folder is
+    // opened. Fetching them while the scene is still being built starves the
+    // boot of both bandwidth and main thread, so the objects are created now
+    // (the pages need to know how many slides there are, and draw their own
+    // placeholders meanwhile) and only the fetches wait for the first frames
+    // to get out of the way.
+    const deferredLoads: (() => void)[] = [];
+    const runDeferredLoads = () => {
+      if (disposed) return;
+      for (const load of deferredLoads.splice(0)) load();
+    };
+    const ric = (window as unknown as {
+      requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number;
+    }).requestIdleCallback;
+    if (ric) ric(runDeferredLoads, { timeout: 2500 });
+    else setTimeout(runDeferredLoads, 1200);
+
     // Static images — a plain Image() decodes fine off-DOM.
     const loadImg = (src: string) => {
       const img = new Image();
-      img.src = src;
+      deferredLoads.push(() => { img.src = src; });
       return img;
     };
     const nookImg = loadImg("/projects/nook.png");
     const matchaImg = loadImg("/projects/matcha-game.jpg");
     const shorthandImg = loadImg("/projects/shorthand-example.png");
-    const galleryImgs = galleryUrls.map(url => {
-      const img = new Image();
-      img.src = url;
-      return img;
-    });
+    const galleryImgs = galleryUrls.map(url => loadImg(url));
     const galleryCaption = (i: number) => {
       const base = decodeURIComponent((galleryUrls[i] ?? "").split("/").pop() ?? "");
       return GALLERY_CAPTIONS[base] ?? "";
@@ -602,12 +641,15 @@ export default function Scene3D() {
     type GifFrame = { canvas: HTMLCanvasElement; delay: number };
     type GifAnim = { frames: GifFrame[]; idx: number; elapsed: number };
     const gifAnims: GifAnim[] = [];
-    let disposed = false; // stops sliced gif decoding after unmount
     function loadGifAnim(url: string, maxW = 720, skipFetch = false) {
       const anim: GifAnim = { frames: [], idx: 0, elapsed: 0 };
       gifAnims.push(anim);
       // Empty frames render as the placeholder box — used to skip heavy gifs on mobile.
       if (skipFetch) return anim;
+      deferredLoads.push(() => { fetchGif(); });
+      return anim;
+
+      function fetchGif() {
       fetch(url)
         .then(r => r.arrayBuffer())
         .then(buf => {
@@ -653,7 +695,7 @@ export default function Scene3D() {
           step();
         })
         .catch(() => { /* thumb just stays a placeholder box */ });
-      return anim;
+      }
     }
     const captchaAnim = loadGifAnim("/projects/ai-proof-captcha.gif");
     const neocitiesAnim = loadGifAnim("/projects/neocities-site.gif");
@@ -1113,7 +1155,7 @@ export default function Scene3D() {
     const hudCanvas = document.createElement("canvas");
     hudCanvas.width = HUD_W;
     hudCanvas.height = HUD_H;
-    const hud = hudCanvas.getContext("2d")!;
+    let hud = hudCanvas.getContext("2d")!;   // repointed while the manual composes
     const hudTexture = new THREE.CanvasTexture(hudCanvas);
     // No color-space tag: the HUD shader below skips the renderer's output
     // encoding, so decoding sRGB on sample would darken the whole screen.
@@ -2170,6 +2212,10 @@ export default function Scene3D() {
     let cablePts: { p: THREE.Vector3; prev: THREE.Vector3 }[] | null = null;
     let cableMesh: THREE.Mesh | null = null;
     const cableMat = new THREE.MeshLambertMaterial({ color: CREAM });
+    // Last-tubed shape, so a wire at rest costs nothing to keep on screen.
+    const cableWas = Array.from({ length: CABLE_POINTS }, () => new THREE.Vector3());
+    const cableScratch = new THREE.Vector3();
+    let cableBuiltAt = 0;
     const anchorLocal = new THREE.Vector3(2.2, -1.7, -1.5); // monitor back, lower right
     const anchorWorld = new THREE.Vector3();
     const cableEndLocal = new THREE.Vector3(0, 0.28, -0.45); // top-front of the mouse, above the buttons
@@ -2195,6 +2241,11 @@ export default function Scene3D() {
     let slideAt = 0;
     let slidePrevRect: { x: number; y: number; w: number; h: number } | null = null;
     let slideNextRect: { x: number; y: number; w: number; h: number } | null = null;
+    // how_to is a two-page manual spread; the footer pager flips between them.
+    let howtoPage: 1 | 2 = 1;
+    let howtoPrevRect: { x: number; y: number; w: number; h: number } | null = null;
+    let howtoNextRect: { x: number; y: number; w: number; h: number } | null = null;
+    const HOWTO_FOOTER_H = 54;
     // Caption to show in a hover tooltip over the extras photo (set each frame)
     let galleryTip: string | null = null;
 
@@ -2210,6 +2261,7 @@ export default function Scene3D() {
       openPage = id;
       pageScroll = 0;
       pageMax = 0;
+      howtoPage = 1;
       setMode(id === "chat" ? "terminal" : "lattice");
     }
     function closeWindow() {
@@ -2232,6 +2284,14 @@ export default function Scene3D() {
         return;
       }
       if (inRect(px, py, XB)) { closeWindow(); return; }
+      if (openPage === "howto") {
+        if (howtoPage === 2 && howtoPrevRect && inRect(px, py, howtoPrevRect)) {
+          howtoPage = 1; pageScroll = 0; return;
+        }
+        if (howtoPage === 1 && howtoNextRect && inRect(px, py, howtoNextRect)) {
+          howtoPage = 2; pageScroll = 0; return;
+        }
+      }
       if (openPage === "extras" && galleryImgs.length > 0) {
         const n = galleryImgs.length;
         if (slidePrevRect && inRect(px, py, slidePrevRect)) {
@@ -2747,7 +2807,7 @@ export default function Scene3D() {
       }
     }
 
-    function drawIconGraphic(kind: "folder" | "exe", cx: number, ty: number) {
+    function drawIconGraphic(kind: "folder" | "doc" | "exe", cx: number, ty: number) {
       if (kind === "folder") {
         hud.fillStyle = "#c99b2f";
         hud.fillRect(cx - 30, ty, 26, 12);        // tab
@@ -2757,6 +2817,35 @@ export default function Scene3D() {
         hud.strokeStyle = "#241a0a";
         hud.lineWidth = 2;
         hud.strokeRect(cx - 32, ty + 8, 64, 44);
+      } else if (kind === "doc") {
+        // A dog-eared page — the manual is a document, not a folder.
+        const w = 46, h = 58, x = cx - w / 2, fold = 15;
+        hud.fillStyle = "#d8d0ba";
+        hud.beginPath();
+        hud.moveTo(x, ty);
+        hud.lineTo(x + w - fold, ty);
+        hud.lineTo(x + w, ty + fold);
+        hud.lineTo(x + w, ty + h);
+        hud.lineTo(x, ty + h);
+        hud.closePath();
+        hud.fill();
+        hud.strokeStyle = "#241a0a";
+        hud.lineWidth = 2;
+        hud.stroke();
+        // the turned-back corner
+        hud.fillStyle = "#9c9078";
+        hud.beginPath();
+        hud.moveTo(x + w - fold, ty);
+        hud.lineTo(x + w, ty + fold);
+        hud.lineTo(x + w - fold, ty + fold);
+        hud.closePath();
+        hud.fill();
+        hud.stroke();
+        // ruled lines standing in for the manual's copy
+        hud.fillStyle = S_ACCENT;
+        for (let i = 0; i < 4; i++) {
+          hud.fillRect(x + 8, ty + 25 + i * 8, w - 16 - (i === 3 ? 12 : 0), 3);
+        }
       } else {
         // Mini CRT running the digit face
         hud.fillStyle = "#d8d0ba";
@@ -2913,67 +3002,365 @@ export default function Scene3D() {
       return y + 30;
     }
 
-    function paintHowTo() {
-      let y = 24;
+    // ─── how_to — a two-page printed manual, shown on the CRT ─
+    // Deliberately a different world from the rest of LamOS: cream stock,
+    // black ink, halftoned screenshots. The CRT's scanlines fall over the top
+    // of it, so it reads as a photocopied manual held up to the glass.
+    //
+    // The spread is drawn in Figma ("Best manual") at 780pt per page. Every
+    // measurement below is written in those units and pushed through ms() onto
+    // the 1024-wide canvas, so this file can be diffed against the design.
+    const PAPER = "#eceae2";   // must match the diagram SVG's own ground
+    const P_INK = "#141210";
+    const P_DIM = "#57544d";
+    const P_KICK = "#6e6b63";
+    // Inter and Roboto Mono are the spread's own faces; the fallbacks only show
+    // in the beat before the webfonts land.
+    const PSANS = "Inter, Arial, 'Helvetica Neue', Helvetica, sans-serif";
+    const PMONO = "'Roboto Mono', ui-monospace, Menlo, monospace";
+    const MS = HUD_W / 780;                  // one Figma page across the glass
+    const ms = (n: number) => n * MS;
+    const M_PAGE_H = ms(1114.23);
+    // Figma places text by its box top; canvas draws from the baseline.
+    const mBase = (top: number, size: number, lh: number) =>
+      top + (lh - size) / 2 + size * 0.76;
+
+    // Paper ground, drawn wide enough that scrolling never exposes an edge.
+    function paperGround() {
+      hud.fillStyle = PAPER;
+      hud.fillRect(-20, -600, HUD_W + 40, M_PAGE_H + 1200);
+    }
+
+    // Canvas has no letter-spacing and the manual leans on it hard, so the
+    // tracked strings get laid out a glyph at a time.
+    function mTracked(text: string, x: number, y: number, track: number) {
+      let sx = x;
+      for (const ch of text) { hud.fillText(ch, sx, y); sx += hud.measureText(ch).width + track; }
+    }
+
+    type MRun = { t: string; b?: boolean };
+
+    // Wraps a mixed bold/regular run list in Figma space, justifying every line
+    // but the last — the spread sets its body copy justified. Returns the top
+    // of the line that would come next.
+    function mRuns(runs: MRun[], fx: number, fyTop: number, fw: number,
+                   size: number, lh: number, justify = true, color = P_INK) {
+      hud.textAlign = "left";
+      hud.textBaseline = "alphabetic";
+      hud.fillStyle = color;
+      const x = ms(fx), w = ms(fw), plh = ms(lh);
+      const face = (b: boolean) => `${b ? 700 : 400} ${ms(size)}px ${PSANS}`;
+      // A word can straddle a weight change ("LamOS" + ","), so each one is a
+      // little list of segments rather than a plain string.
+      type MWord = { t: string; b: boolean }[];
+      const words: MWord[] = [];
+      let joined = false;   // the run boundary fell mid-word
+      for (const r of runs) {
+        for (const part of r.t.split(/(\s+)/)) {
+          if (!part) continue;
+          if (!part.trim()) { joined = false; continue; }
+          if (joined && words.length) words[words.length - 1].push({ t: part, b: !!r.b });
+          else words.push([{ t: part, b: !!r.b }]);
+          joined = true;
+        }
+      }
+      hud.font = face(false);
+      const sp = hud.measureText(" ").width;
+      const wordW = (word: MWord) => word.reduce((acc, seg) => {
+        hud.font = face(seg.b);
+        return acc + hud.measureText(seg.t).width;
+      }, 0);
+
+      let y = ms(mBase(fyTop, size, lh));
+      let line: MWord[] = [], lineW = 0, rows = 0;
+      const flush = (last: boolean) => {
+        const gaps = line.length - 1;
+        // lineW already carries the natural spaces, so the slack is the whole
+        // remainder of the measure spread over the gaps.
+        const pad = justify && !last && gaps > 0 ? (w - lineW) / gaps : 0;
+        let cx = x;
+        for (const word of line) {
+          for (const seg of word) {
+            hud.font = face(seg.b);
+            hud.fillText(seg.t, cx, y);
+            cx += hud.measureText(seg.t).width;
+          }
+          cx += sp + pad;
+        }
+        y += plh; rows++; line = []; lineW = 0;
+      };
+      for (const word of words) {
+        const ww = wordW(word);
+        if (line.length && lineW + sp + ww > w) flush(false);
+        lineW += (line.length ? sp : 0) + ww;
+        line.push(word);
+      }
+      if (line.length) flush(true);
+      return fyTop + rows * lh;
+    }
+
+    // Solid black masthead across the top of page 1.
+    function mBanner(title: string, sub: string, fx: number, fy: number, fw: number, fh: number) {
+      hud.fillStyle = P_INK;
+      hud.fillRect(ms(fx), ms(fy), ms(fw), ms(fh));
+      hud.fillStyle = PAPER;
+      hud.textAlign = "left";
+      hud.textBaseline = "alphabetic";
+      hud.font = `700 ${ms(26)}px ${PSANS}`;
+      mTracked(title, ms(fx + 20), ms(mBase(fy + 9, 26, 31.46)), ms(0.26));
+      hud.font = `600 ${ms(11)}px ${PSANS}`;
+      mTracked(sub, ms(fx + 20), ms(mBase(fy + 42.5, 11, 12.98)), ms(2.42));
+    }
+
+    // Dark rounded pill heading the two big sections.
+    function mPill(text: string, fx: number, fy: number, fw: number) {
+      const h = 31.5;
+      hud.fillStyle = "#3a3733";
+      hud.beginPath();
+      hud.roundRect(ms(fx), ms(fy), ms(fw), ms(h), ms(h / 2));
+      hud.fill();
+      hud.fillStyle = PAPER;
+      hud.font = `700 ${ms(16)}px ${PSANS}`;
+      hud.textAlign = "left";
+      hud.textBaseline = "alphabetic";
+      mTracked(text, ms(fx + 26), ms(mBase(fy + 6, 16, 19.52)), ms(0.48));
+    }
+
+    function mKicker(text: string, fx: number, fy: number) {
+      hud.font = `700 ${ms(10)}px ${PMONO}`;
+      hud.fillStyle = P_KICK;
+      hud.textAlign = "left";
+      hud.textBaseline = "alphabetic";
+      mTracked(text.toUpperCase(), ms(fx), ms(mBase(fy, 10, 13)), ms(1.8));
+    }
+
+    function mRule(fx: number, fy: number, fw: number, fh: number) {
+      hud.fillStyle = P_INK;
+      hud.fillRect(ms(fx), ms(fy), ms(fw), ms(fh));
+    }
+
+    // Halftoned screen plate: hard black keyline, and on page 2 the spread's
+    // offset paste-up shadow. The art is cover-cropped so re-exporting a
+    // screenshot at a new aspect can never squash it.
+    function mPlate(key: string, fx: number, fy: number, fw: number, fh: number, shadow = true) {
+      const x = ms(fx), y = ms(fy), w = ms(fw), h = ms(fh);
+      if (shadow) {
+        hud.fillStyle = "rgba(0,0,0,0.28)";
+        hud.fillRect(x + ms(3), y + ms(4), w, h);
+      }
+      hud.fillStyle = "#000000";
+      hud.fillRect(x, y, w, h);
+      if (artReady(key)) {
+        const img = manualArt[key];
+        const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight);
+        const sw = w / scale, sh = h / scale;
+        hud.drawImage(img, (img.naturalWidth - sw) / 2, (img.naturalHeight - sh) / 2, sw, sh, x, y, w, h);
+      }
+      hud.strokeStyle = P_INK;
+      hud.lineWidth = ms(2);
+      hud.strokeRect(x + ms(1), y + ms(1), w - ms(2), h - ms(2));
+    }
+
+    // Screenshot caption: mono filename over a line of Inter.
+    function mCaption(name: string, blurb: string, fx: number, fyTop: number, fw: number) {
+      hud.font = `700 ${ms(11.5)}px ${PMONO}`;
+      hud.fillStyle = P_INK;
+      hud.textAlign = "left";
+      hud.textBaseline = "alphabetic";
+      mTracked(name, ms(fx), ms(mBase(fyTop, 11.5, 16.56)), ms(0.23));
+      mRuns([{ t: blurb }], fx, fyTop + 16.3, fw, 11, 15.95, false);
+    }
+
+    function mFolio(label: string, fx: number, fy: number) {
+      hud.fillStyle = P_INK;
+      hud.fillRect(ms(fx), ms(fy), ms(31.8), ms(24));
+      hud.fillStyle = PAPER;
+      hud.font = `700 ${ms(13)}px ${PMONO}`;
+      hud.textAlign = "left";
+      hud.textBaseline = "alphabetic";
+      hud.fillText(label, ms(fx + 12), ms(mBase(fy + 3, 13, 17.03)));
+    }
+
+    // The "LET'S TRY IT" burst pasted over the corner of page 2. The outline is
+    // the star's own path out of the Figma file, in its 124x119 export box.
+    const M_STAR = new Path2D(
+      "M56.579 3.53903e-06L71.2651 21.5198L94.7517 8.06722L93.0486 33.7172L120.325 35.6935L102.883 " +
+      "55.6762L123.53 72.3266L97.0111 79.0094L103.142 103.974L77.6767 94.8041L66.9505 118.547L52.2644 " +
+      "97.0274L28.7778 110.48L30.4809 84.83L3.20496 82.8537L20.6468 62.8709L-2.20485e-05 46.2206L26.5184 " +
+      "39.5378L20.387 14.5733L45.8528 23.7431L56.579 3.53903e-06Z",
+    );
+    function mStarBadge(fcx: number, fcy: number) {
+      hud.save();
+      hud.translate(ms(fcx), ms(fcy));
+      hud.rotate((-5 * Math.PI) / 180);
+      hud.scale(MS, MS);
+      hud.fillStyle = P_INK;
+      hud.translate(-62, -59.5);
+      hud.fill(M_STAR);
+      hud.restore();
+
+      hud.save();
+      hud.translate(ms(fcx), ms(fcy));
+      hud.rotate((14.09 * Math.PI) / 180);
+      hud.fillStyle = PAPER;
+      hud.font = `700 ${ms(16)}px ${PSANS}`;
       hud.textAlign = "center";
       hud.textBaseline = "middle";
-      hud.font = `700 30px ${MONO}`;
-      hud.fillStyle = S_ACCENT;
-      hud.fillText("✦ HOW_TO.TXT ✦", HUD_W / 2, y); y += 46;
-      hud.font = `500 19px ${MONO}`;
-      hud.fillStyle = S_DIM;
-      hud.fillText("everything in this room does something. go poke it.", HUD_W / 2, y);
-      y += 30;
-      hud.fillStyle = S_LINE;
-      hud.fillRect(120, y, HUD_W - 240, 2); y += 40;
+      hud.fillText("LET'S", 0, ms(-9.8));
+      hud.fillText("TRY IT", 0, ms(9.8));
+      hud.restore();
+    }
 
-      // One line per thing, wrapped against the window's width.
-      function entries(rows: readonly (readonly [string, string])[]) {
-        const LABEL_X = 104, TEXT_X = 366, LINE_H = 25;
-        rows.forEach(([label, text]) => {
-          hud.textAlign = "left";
-          hud.font = `700 18px ${MONO}`;
-          hud.fillStyle = S_ACCENT;
-          hud.fillText(`· ${label}`, LABEL_X, y);
-          hud.font = `500 19px ${MONO}`;
-          hud.fillStyle = S_INK;
-          const lines = wrapLines(text, HUD_W - TEXT_X - 84);
-          lines.forEach((line, i) => {
-            hud.fillText(line, TEXT_X, y + i * LINE_H);
-          });
-          y += Math.max(1, lines.length) * LINE_H + 9;
-        });
-        y += 18;
+    // A manual page is a rasterised SVG plus a couple of thousand text ops —
+    // far too much to redo sixty times a second for print that never moves. It
+    // gets composed once into its own canvas and blitted from then on, and only
+    // re-composed when the page flips, a plate finishes loading, or the
+    // webfonts land and the copy wants re-setting in Inter.
+    let howtoPlate: HTMLCanvasElement | null = null;
+    let howtoPlateKey = "";
+
+    function paintHowTo() {
+      const key = howtoPage + "|" + Object.keys(MANUAL_FILES).map(k => (artReady(k) ? "1" : "0")).join("")
+        + "|" + (document.fonts?.status ?? "");
+      if (!howtoPlate || howtoPlateKey !== key) {
+        howtoPlate ??= document.createElement("canvas");
+        howtoPlate.width = HUD_W;
+        howtoPlate.height = Math.ceil(M_PAGE_H);
+        const live = hud;
+        hud = howtoPlate.getContext("2d")!;
+        hud.setTransform(1, 0, 0, 1, 0, 0);
+        paperGround();
+        if (howtoPage === 1) paintHowToOne(); else paintHowToTwo();
+        hud = live;
+        howtoPlateKey = key;
       }
+      // Paper runs past the plate on both ends so an overscroll never exposes
+      // the desktop's black behind it.
+      hud.fillStyle = PAPER;
+      hud.fillRect(-20, -600, HUD_W + 40, M_PAGE_H + 1200);
+      hud.drawImage(howtoPlate, 0, 0);
+      hud.textAlign = "left";
+      hud.textBaseline = "alphabetic";
+      return M_PAGE_H;
+    }
 
-      y = sectionHeader(">> stuff on the desk", y);
-      entries([
-        ["radio", "press it to play whatever I've had on repeat on Spotify lately."],
-        ["résumé folder", "click it and the page slides out and unfolds — the text is real, so highlight it."],
-        ["desk calendar", "click it to grab a slot on my actual Calendly."],
-        ["power button", "bottom-left of the monitor's bezel, kills the screen and reboots LamOS on the way back."],
-        ["gym counter", "days since I last touched a barbell, pulled live from Hevy and rarely flattering."],
-      ]);
+    // ── page 1 — the labelled desk plate ──
+    function paintHowToOne() {
+      mBanner("HOW TO USE THE DESK", "DON'T MIND THE MESS, I'LL GET TO IT", 38, 48, 362.65, 66.5);
+      mRuns([{ t: "Before you get started, here's all the stuff you should know:" }],
+        38, 140, 691, 13, 20.8, false);
 
-      y = sectionHeader(">> stuff on the screen", y);
-      entries([
-        ["about me", "the short version of who I am, plus a visitor counter I refuse to remove."],
-        ["how_to", "you are here."],
-        ["personal projects", "things I built because I wanted them to exist."],
-        ["extras", "a photo dump with captions, hover a photo to read one."],
-        ["let's chat.exe", "talk to the little guy made of particles — he answers as me."],
-      ]);
+      // fig. 1 — the labelled desk, exported whole out of the spread, labels
+      // and all, so the callout lines stay glued to the objects they point at.
+      if (artReady("diagram")) hud.drawImage(manualArt.diagram, ms(38), ms(176), ms(704), ms(430));
 
-      y = sectionHeader(">> good to know", y);
-      entries([
-        ["lean in", "right-click (or two-finger click) anywhere to pull up to the screen, then again to lean back."],
-        ["your hardware", "the keyboard and mouse on the desk mirror the ones under your hands."],
-        ["scrolling", "spin the wheel to move whichever window is open."],
-        ["the window", "the sky out there tracks New York's actual time of day."],
-        ["say her name", "type \"nikki\" to the terminal, then keep an eye on the window."],
-      ]);
+      mPill("GETTING STARTED", 46, 668, 208.8);
+      mRule(46, 708.5, 690, 3);
 
-      return y + 10;
+      mKicker("fig. 1 — power on", 46, 744);
+      mRuns([
+        { t: "Everything boots into " },
+        { t: "LamOS", b: true },
+        { t: ", my virtual desk top. The room is a single Three.js scene: low-poly meshes, flat " +
+             "Lambert shading, and a live canvas texture on the CRT's glass (so the virtual OS can " +
+             "actively re-render every frame in real-time)." },
+      ], 46, 783, 359.74, 12.5, 20.25);
+      mRuns([{ t: "All the clickable items will be highlighted and a small description for each, but " +
+                  "if you're confused come back and refer to the diagram above. Handcrafted assets " +
+                  "are on their way, just you wait!" }],
+        46, 892, 359.74, 12.5, 20.25);
+
+      mPlate("boot", 418, 743.5, 317, 232, false);
+      mRuns([{ t: "The splash holds for a second or two, then the desktop icons drop in. It's an old " +
+                  "device so bear with me..." }],
+        418, 985.5, 326.25, 11, 15.95, false);
+
+      mRule(92, 1085, 644, 2);
+      mFolio("1", 38, 1070.23);
+      return M_PAGE_H;
+    }
+
+    // ── page 2 — the folders, and everything else it does ──
+    function paintHowToTwo() {
+      mKicker("the desktop", 52, 40);
+      hud.font = `700 ${ms(23)}px ${PSANS}`;
+      hud.fillStyle = P_INK;
+      hud.textAlign = "left";
+      hud.textBaseline = "alphabetic";
+      mTracked("WHAT'S IN EACH FOLDER", ms(52), ms(mBase(58, 23, 28.06)), ms(0.23));
+      mRule(52, 95, 690, 3);
+      mRuns([{ t: "A single click opens the files in-window. Each one scrolls with the wheel and " +
+                  "close with the x." }],
+        51.5, 116.61, 691, 13, 20.8);
+
+      // Four screenshots pasted up a hair off-square, as in the spread.
+      mPlate("about", 53.5, 182.61, 343.97, 263.78);
+      mPlate("projects", 405.35, 184.56, 342.69, 262.05);
+      mPlate("extras", 54.5, 511.61, 341, 249);
+      mPlate("chat", 405, 514, 342, 246);
+
+      mCaption("about_me", "A self-intro and a couple of FAQs for me. reach out for more :)",
+        62.5, 456.61, 333.65);
+      mCaption("personal_projects", "Things I built for fun, always open to new ideas too!",
+        410.1, 456.51, 337.6);
+      mCaption("extras", "A photo dump, hover any shot to read the captions.",
+        62.5, 774.61, 333.65);
+      mCaption("lets_chat.exe", "Come talk to my digital rep, ask him to ask me anything.",
+        407.5, 774.61, 337.5);
+
+      mRuns([{ t: "how_to", b: true }, { t: " - That's this page!" }],
+        63, 817, 698, 11, 17.82, false, P_DIM);
+
+      mPill("OTHER THINGS IT DOES", 52, 849.98, 248.7);
+      mRule(52, 890.48, 690, 3);
+      mRuns([
+        { t: "The chatbot is really running.", b: true },
+        { t: " lets_chat.exe posts to a small Node server that holds the API key and the persona " +
+             "prompt. Replies stream back with inline tags in them, and those tags drive the " +
+             "particle face, that's how it nods, smiles and squints as the sentence types itself out." },
+      ], 52.5, 909.62, 690, 12.5, 20.25);
+      mRuns([
+        { t: "The sky repaints itself.", b: true },
+        { t: " The view through the window is a gradient keyed to the actual clock in New York, blue " +
+             "through the working day, orange at dusk, and a scatter of stars after dark. Come back " +
+             "later and you'll see it turn over." },
+      ], 52.5, 989.62, 690, 12.5, 20.25);
+
+      mRule(52, 1086, 650, 2);
+      mFolio("2", 710.2, 1070.23);
+      mStarBadge(702.5, 107.57);   // pasted last, so it sits over the rule
+      return M_PAGE_H;
+    }
+
+    // Fixed footer, drawn outside the scroll clip so it never scrolls away.
+    function drawHowToPager() {
+      const y = HUD_H - HOWTO_FOOTER_H;
+      hud.fillStyle = P_INK;
+      hud.fillRect(0, y, HUD_W, HOWTO_FOOTER_H);
+      hud.textBaseline = "middle";
+      const cy = y + HOWTO_FOOTER_H / 2;
+
+      const btn = (label: string, bx: number, on: boolean) => {
+        const w = 152, h = 32, by = cy - h / 2;
+        hud.fillStyle = on ? PAPER : "#3a3733";
+        hud.beginPath();
+        hud.roundRect(bx, by, w, h, 4);
+        hud.fill();
+        hud.fillStyle = on ? P_INK : "#6b675f";
+        hud.font = `700 14px ${PSANS}`;
+        hud.textAlign = "center";
+        hud.fillText(label, bx + w / 2, cy + 1);
+        return { x: bx, y: by, w, h };
+      };
+
+      howtoPrevRect = btn("‹  PREV", 40, howtoPage === 2);
+      howtoNextRect = btn("NEXT  ›", HUD_W - 40 - 152, howtoPage === 1);
+
+      hud.fillStyle = PAPER;
+      hud.font = `700 13px ${PMONO}`;
+      hud.textAlign = "center";
+      hud.fillText(`PAGE ${howtoPage} / 2`, HUD_W / 2, cy + 1);
+      hud.textAlign = "left";
     }
 
     function paintProjects(px: number, py: number) {
@@ -3158,10 +3545,14 @@ export default function Scene3D() {
       hud.fillStyle = "#0a0806";
       hud.fillRect(0, 0, HUD_W, HUD_H);
       slidePrevRect = slideNextRect = null;
+      howtoPrevRect = howtoNextRect = null;
       galleryTip = null;
+      // how_to reserves a strip at the bottom for its pager, so the scrolling
+      // area stops short of it.
+      const foot = id === "howto" ? HOWTO_FOOTER_H : 0;
       hud.save();
       hud.beginPath();
-      hud.rect(0, TITLE_H, HUD_W, HUD_H - TITLE_H);
+      hud.rect(0, TITLE_H, HUD_W, HUD_H - TITLE_H - foot);
       hud.clip();
       hud.translate(0, TITLE_H + 24 - pageScroll);
       let bottom = 0;
@@ -3170,11 +3561,12 @@ export default function Scene3D() {
       else if (id === "projects") bottom = paintProjects(px, py);
       else bottom = paintExtras(now, px, py);
       hud.restore();
-      pageMax = Math.max(0, bottom - (HUD_H - TITLE_H - 48));
+      if (id === "howto") drawHowToPager();
+      pageMax = Math.max(0, bottom - (HUD_H - TITLE_H - foot - 48));
       if (pageScroll > pageMax) pageScroll = pageMax;
       // Chunky retro scrollbar
       if (pageMax > 0) {
-        const trackY = TITLE_H + 8, trackH = HUD_H - TITLE_H - 16;
+        const trackY = TITLE_H + 8, trackH = HUD_H - TITLE_H - foot - 16;
         hud.fillStyle = "rgba(232,197,71,0.08)";
         hud.fillRect(HUD_W - 18, trackY, 10, trackH);
         const thumbH = Math.max(40, trackH * (trackH / (trackH + pageMax)));
@@ -3618,24 +4010,36 @@ export default function Scene3D() {
           const a = cablePts[i].p, b = cablePts[i + 1].p;
           const d = a.distanceTo(b) || 0.0001;
           const diff = (d - segLen) / d;
-          if (i === 0) b.sub(a.clone().sub(b).multiplyScalar(-diff));
-          else if (i === CABLE_POINTS - 2) a.add(b.clone().sub(a).multiplyScalar(diff));
+          if (i === 0) b.sub(cableScratch.copy(a).sub(b).multiplyScalar(-diff));
+          else if (i === CABLE_POINTS - 2) a.add(cableScratch.copy(b).sub(a).multiplyScalar(diff));
           else {
-            const corr = b.clone().sub(a).multiplyScalar(diff * 0.5);
+            const corr = cableScratch.copy(b).sub(a).multiplyScalar(diff * 0.5);
             a.add(corr); b.sub(corr);
           }
         }
         cablePts[0].p.copy(anchorWorld);
         cablePts[CABLE_POINTS - 1].p.copy(cableEndWorld);
       }
-      if (cableMesh) {
-        cableMesh.geometry.dispose();
-        scene.remove(cableMesh);
+      // A fresh TubeGeometry every frame is a lot of garbage — and a full
+      // vertex re-upload — for a wire that only moves when the mouse does. Keep
+      // one mesh in the scene and re-tube it only once the slack has actually
+      // shifted, and never faster than 30 Hz.
+      let cableDrift = 0;
+      for (let i = 0; i < CABLE_POINTS; i++) cableDrift += cablePts[i].p.distanceToSquared(cableWas[i]);
+      if (!cableMesh || (cableDrift > 1e-7 && now - cableBuiltAt > 33)) {
+        for (let i = 0; i < CABLE_POINTS; i++) cableWas[i].copy(cablePts[i].p);
+        cableBuiltAt = now;
+        const curve = new THREE.CatmullRomCurve3(cablePts.map(c => c.p));
+        const geo = new THREE.TubeGeometry(curve, 24, 0.035, 6);
+        if (cableMesh) {
+          cableMesh.geometry.dispose();
+          cableMesh.geometry = geo;
+        } else {
+          cableMesh = new THREE.Mesh(geo, cableMat);
+          cableMesh.castShadow = true;
+          scene.add(cableMesh);
+        }
       }
-      const curve = new THREE.CatmullRomCurve3(cablePts.map(c => c.p));
-      cableMesh = new THREE.Mesh(new THREE.TubeGeometry(curve, 32, 0.035, 6), cableMat);
-      cableMesh.castShadow = true;
-      scene.add(cableMesh);
 
       // ── Render ──
       if (screenOn) {

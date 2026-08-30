@@ -132,7 +132,7 @@ const entryHtml = (e: Entry) => `
 export const RESUME_HTML = `
 <article class="rs-page">
   <h1 class="rs-name">Lorn Hin Adrian Lam</h1>
-  <p class="rs-contact">951-262-3062&nbsp;&nbsp;reachmeonlinkedin@rocketmail.com&nbsp;&nbsp;GitHub&nbsp;&nbsp;Linkedin</p>
+  <p class="rs-contact"><a href="https://github.com/adrianlamlh" target="_blank" rel="noopener noreferrer">GitHub</a>&nbsp;&nbsp;<a href="https://linkedin.com/in/adrianlhlam" target="_blank" rel="noopener noreferrer">Linkedin</a></p>
   <p class="rs-summary">Machine Learning Engineer with 3+ years of experience, specializing in production ML, generative AI and MLOps</p>
   ${SECTIONS.map(s => `
     <section class="rs-section">
@@ -156,6 +156,10 @@ export const RESUME_CSS = `
 .rs-page *{box-sizing:border-box;margin:0;padding:0}
 .rs-name{font-size:2.9em;font-weight:400;text-align:center;letter-spacing:.01em;line-height:1.1}
 .rs-contact{font-size:.92em;text-align:center;margin-top:.25em}
+/* Kept in the résumé's own ink rather than link-blue — the sheet reads as
+   print, and the page sets cursor:text over everything. */
+.rs-contact a{color:inherit;text-decoration:underline;text-underline-offset:.14em;cursor:pointer}
+.rs-contact a:hover{text-decoration-thickness:2px}
 .rs-summary{font-size:.98em;text-align:center;margin:.9em 0 .2em}
 .rs-section{margin-top:.62em}
 .rs-heading{font-size:1.18em;font-weight:400;font-variant:small-caps;letter-spacing:.03em;
