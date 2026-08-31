@@ -487,7 +487,7 @@ export default function Scene3D() {
     // Yellow rocker: a flat square plate with an upright rocker set into it,
     // both the same plastic. The wall face is at z = -4.25, so the plate's back
     // sits flush against it.
-    let lightsOn = false; // room starts on daylight alone
+    let lightsOn = true; // room starts lit — the switch turns it back off
     const SW_YELLOW = 0xf2c313;
     const matSwitch = new THREE.MeshLambertMaterial({ color: SW_YELLOW });
     const lightSwitch = new THREE.Group();
@@ -504,7 +504,7 @@ export default function Scene3D() {
     // with the plate face.
     const swBtn = box(0.36, 0.46, 0.05, matSwitch);
     swBtn.position.z = 0.04;
-    swBtn.rotation.x = 0.16; // resting in the off tilt on the first frame
+    swBtn.rotation.x = -0.16; // resting in the on tilt on the first frame
     lightSwitch.add(swPlate, swBtn);
 
     // The bulb this drives lives up at the ceiling fan — see below, where the
@@ -765,13 +765,16 @@ export default function Scene3D() {
     // in the scene. The CRT glow gets away with 0.55 only because it sits inches
     // off the keyboard. decay 1.25 (under the physical 2) keeps the far corners
     // from falling away.
-    const roomLight = new THREE.PointLight(0xffdcb4, 0, 46, 1.2);
-    roomLight.position.copy(fan.position); // dead centre of the hub
-    scene.add(roomLight);
-    const roomFill = new THREE.HemisphereLight(0xffe7d0, 0x6a5a44, 0);
-    scene.add(roomFill);
     const ROOM_LIGHT_MAX = 48; // +4 offsets the extra throw from moving the fan out
     const ROOM_FILL_MAX = 0.85;
+    // Full brightness on the first frame, matching lightsOn — the animate loop
+    // only ever eases toward the target, so starting these at 0 would fade the
+    // room up on load instead of it simply being lit.
+    const roomLight = new THREE.PointLight(0xffdcb4, ROOM_LIGHT_MAX, 46, 1.2);
+    roomLight.position.copy(fan.position); // dead centre of the hub
+    scene.add(roomLight);
+    const roomFill = new THREE.HemisphereLight(0xffe7d0, 0x6a5a44, ROOM_FILL_MAX);
+    scene.add(roomFill);
 
     // ─── Mousepad ────────────────────────────────────────────
     const mousepad = new THREE.Mesh(
