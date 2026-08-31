@@ -1065,6 +1065,10 @@ export default function Scene3D() {
         uGlow: { value: 0.14 },
         uGain: { value: 1.8 },
         uResolution: { value: new THREE.Vector2(RT_W, RT_H) },
+        // Dia easter egg: the amber ink gives way to the logo's sky gradient,
+        // rolling up and down the shape. 0 while the normal face is up.
+        uDia: { value: 0 },
+        uTime: { value: 0 },
       },
       vertexShader: `
         varying vec2 vUv;
@@ -1084,7 +1088,20 @@ export default function Scene3D() {
         uniform vec3 uGlowColor;
         uniform float uGlow;
         uniform float uGain;
+        uniform float uDia;
+        uniform float uTime;
         varying vec2 vUv;
+
+        // The logo's vertical ramp, bottom-lit: deep blue → haze → gold → coral.
+        vec3 diaRamp(float g) {
+          vec3 c = mix(vec3(0.216, 0.361, 0.706), vec3(0.616, 0.753, 0.878), smoothstep(0.00, 0.34, g));
+          c = mix(c, vec3(0.937, 0.949, 0.965), smoothstep(0.30, 0.50, g));
+          c = mix(c, vec3(0.965, 0.855, 0.478), smoothstep(0.47, 0.70, g));
+          c = mix(c, vec3(0.945, 0.631, 0.353), smoothstep(0.66, 0.86, g));
+          c = mix(c, vec3(0.878, 0.341, 0.420), smoothstep(0.83, 1.00, g));
+          return c;
+        }
+
         void main() {
           vec2 pixel = vUv * uResolution;
           vec2 cellIdx = floor(pixel / uCellSize);
@@ -1097,8 +1114,25 @@ export default function Scene3D() {
           float fieldLum = dot(texture2D(uScene, vUv).rgb, vec3(0.299, 0.587, 0.114));
           float halo = pow(clamp(fieldLum * uGain, 0.0, 1.0), 1.4) * uGlow;
 
+          vec3 ink = uInk;
+          vec3 glowCol = uGlowColor;
+          if (uDia > 0.001) {
+            // The face's slice of the frame in UV, so the whole ramp lands on
+            // the logo rather than being spread over the empty pane.
+            float top = 0.76, bot = 0.30;
+            // Two beating sines make the band undulate across the shape, and
+            // the swell rolls the whole ramp up and down like a swell of water.
+            float wave = sin(vUv.x * 11.0 - uTime * 1.5) * 0.055
+                       + sin(vUv.x * 5.0 + uTime * 0.9) * 0.035;
+            float swell = sin(uTime * 0.8) * 0.16;
+            float g = clamp((top - (vUv.y + wave + swell)) / (top - bot), 0.0, 1.0);
+            vec3 d = diaRamp(g);
+            ink = mix(ink, d, uDia);
+            glowCol = mix(glowCol, d, uDia);
+          }
+
           if (brightness < 0.05) {
-            gl_FragColor = vec4(uBg + uGlowColor * halo, 1.0);
+            gl_FragColor = vec4(uBg + glowCol * halo, 1.0);
             return;
           }
 
@@ -1109,9 +1143,9 @@ export default function Scene3D() {
           float u = (pos + atlasX) / 10.0;
           vec4 glyph = texture2D(uAtlas, vec2(u, cellFrac.y));
 
-          vec3 col = uBg + uGlowColor * halo;
-          col = mix(col, uInk, glyph.a);
-          col += uGlowColor * glyph.a * brightness * 0.12;
+          vec3 col = uBg + glowCol * halo;
+          col = mix(col, ink, glyph.a);
+          col += glowCol * glyph.a * brightness * 0.12;
           gl_FragColor = vec4(col, 1.0);
         }
       `,
@@ -1270,9 +1304,53 @@ export default function Scene3D() {
       return { head, eyes, mouth };
     }
 
+    // ─── Dia logo ────────────────────────────────────────────
+    // Typing "dia" at the terminal swaps the face out for the app's mark for
+    // the length of that one reply. Same particle pipeline as the face — the
+    // silhouette is a filled path rather than strokes, so the ascii pass gets
+    // a solid field to run the gradient over (see uDia in asciiMaterial).
+    function diaShape(ctx: CanvasRenderingContext2D, x0: number, y0: number, w: number, h: number) {
+      const X = (u: number) => x0 + u * w;
+      const Y = (v: number) => y0 + v * h;
+      ctx.beginPath();
+      ctx.moveTo(X(0.500), Y(0.000));
+      ctx.bezierCurveTo(X(0.795), Y(0.000), X(1.000), Y(0.268), X(1.000), Y(0.600)); // dome, right half
+      ctx.bezierCurveTo(X(1.000), Y(0.710), X(1.000), Y(0.800), X(1.000), Y(0.885)); // right flank
+      ctx.bezierCurveTo(X(1.000), Y(0.963), X(0.955), Y(1.004), X(0.875), Y(0.985)); // right foot
+      ctx.bezierCurveTo(X(0.745), Y(0.950), X(0.632), Y(0.876), X(0.500), Y(0.874)); // scoop in to centre
+      ctx.bezierCurveTo(X(0.368), Y(0.876), X(0.255), Y(0.950), X(0.125), Y(0.985)); // and back out
+      ctx.bezierCurveTo(X(0.045), Y(1.004), X(0.000), Y(0.963), X(0.000), Y(0.885)); // left foot
+      ctx.bezierCurveTo(X(0.000), Y(0.800), X(0.000), Y(0.710), X(0.000), Y(0.600)); // left flank
+      ctx.bezierCurveTo(X(0.000), Y(0.268), X(0.205), Y(0.000), X(0.500), Y(0.000)); // dome, left half
+      ctx.closePath();
+    }
+
+    let faceLogo = false;      // dia mark up instead of the face
+    let diaMix = 0;            // eased 0→1 companion, drives the ink gradient
+    let diaSampled: [number, number][] | null = null;
+    function diaPoints() {
+      if (!diaSampled) {
+        const pts = samplePart("dia", (ctx) => {
+          diaShape(ctx, 20, 45, 280, 230);
+          ctx.fill();
+        });
+        // The fill yields several times more sample points than there are
+        // particles, and computeTargets walks them in order — unshuffled that
+        // would pack every particle into the top few scanlines. Shuffling once
+        // makes any prefix an even scatter across the whole mark.
+        diaSampled = pts.slice();
+        for (let i = diaSampled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [diaSampled[i], diaSampled[j]] = [diaSampled[j], diaSampled[i]];
+        }
+      }
+      return diaSampled;
+    }
+
     let mode: SphereMode = "lattice";
     function computeTargets() {
-      const parts = mode === "terminal" ? faceParts(faceExpr, faceFlap) : null;
+      const dia = mode === "terminal" && faceLogo ? diaPoints() : null;
+      const parts = mode === "terminal" && !dia ? faceParts(faceExpr, faceFlap) : null;
       // Particle budgets track each part's point count so density — and with
       // it the digit brightness — stays uniform across the face. The head
       // budget is constant (its point count never changes), so head particles
@@ -1285,7 +1363,12 @@ export default function Scene3D() {
       for (let i = 0; i < COUNT; i++) {
         const ox = originals[i * 3], oy = originals[i * 3 + 1], oz = originals[i * 3 + 2];
         let tx: number, ty: number, tz: number;
-        if (!parts) {
+        if (dia) {
+          const p = dia[i % dia.length];
+          tx = p[0] - 1.45 + (randoms[i] - 0.5) * 0.02;
+          ty = p[1] + 0.1 + ((randoms[i] * 7.31) % 1 - 0.5) * 0.02;
+          tz = (((randoms[i] * 13.7) % 1) - 0.5) * 0.3;
+        } else if (!parts) {
           const s = 0.28;
           tx = Math.round(ox * 1.3 / s) * s;
           ty = Math.round(oy * 1.3 / s) * s;
@@ -2181,6 +2264,9 @@ export default function Scene3D() {
       if (!q || termBusy) return;
       // Naming her to the terminal sends her past the window.
       if (/^nikki[\s!.?,]*$/i.test(q)) triggerWalker();
+      // Naming dia swaps the face for its mark — for this message only, so the
+      // next thing you send puts the face back.
+      faceLogo = /^dia[\s!.?,]*$/i.test(q);
       termInput = "";
       lastUserMsg = q;
       termBusy = true;
@@ -2952,7 +3038,7 @@ export default function Scene3D() {
       // The greeting is a long line in a big display font — shrink it until it
       // fits rather than letting it run off both edges of the screen.
       hud.fillStyle = S_INK;
-      const greeting = "Hi I'm adrian, welcome to my humble abode :^)";
+      const greeting = "Hi I'm Adrian, welcome to my virtual room :^)";
       let gsize = 44;
       hud.font = `900 ${gsize}px ${MARKER}`;
       while (gsize > 22 && hud.measureText(greeting).width > HUD_W - 96) {
@@ -2987,16 +3073,20 @@ export default function Scene3D() {
       });
       y += 24;
 
-      // Visitor counter — mandatory on any self-respecting 90s page
+      // The green LED plate every self-respecting 90s page had, minus the
+      // fake hit count. Sized to the line rather than the old fixed 300px —
+      // the greeting is twice the width of the counter it replaced.
+      hud.textAlign = "center";
+      hud.font = `700 22px ${MONO}`;
+      const welcome = "Thanks for visiting my humble abode";
+      const welcomeW = Math.min(HUD_W - 80, hud.measureText(welcome).width + 48);
       hud.fillStyle = "#000000";
-      hud.fillRect(HUD_W / 2 - 150, y, 300, 54);
+      hud.fillRect(HUD_W / 2 - welcomeW / 2, y, welcomeW, 54);
       hud.strokeStyle = S_DIM;
       hud.lineWidth = 2;
-      hud.strokeRect(HUD_W / 2 - 150, y, 300, 54);
-      hud.textAlign = "center";
-      hud.font = `700 26px ${MONO}`;
+      hud.strokeRect(HUD_W / 2 - welcomeW / 2, y, welcomeW, 54);
       hud.fillStyle = "#5dff5d";
-      hud.fillText("visitor № 001337", HUD_W / 2, y + 28);
+      hud.fillText(welcome, HUD_W / 2, y + 28);
       y += 84;
 
       return y + 30;
@@ -3891,9 +3981,12 @@ export default function Scene3D() {
         points2.visible = false;
         // Talking mouth flap re-targets the particle face
         const flap = bubbleTyping && faceExpr === "neutral" && Math.floor(now / 150) % 2 === 0;
-        const key = `${faceExpr}|${flap ? 1 : 0}`;
+        // The dia mark has no expressions, so it keys off itself alone —
+        // otherwise every mouth flap underneath would re-scatter the logo.
+        const shape = faceLogo ? "dia" : faceExpr;
+        const key = `${shape}|${faceLogo ? 0 : flap ? 1 : 0}`;
         if (key !== lastFaceKey) {
-          const exprChanged = lastFaceKey !== "" && !lastFaceKey.startsWith(faceExpr + "|");
+          const exprChanged = lastFaceKey !== "" && !lastFaceKey.startsWith(shape + "|");
           lastFaceKey = key;
           faceFlap = flap;
           computeTargets();
@@ -4047,6 +4140,13 @@ export default function Scene3D() {
         renderer.setRenderTarget(particleRT);
         renderer.clear();
         renderer.render(sphereScene, sphereCamera);
+        // Ease the ink into the dia gradient rather than cutting to it, so the
+        // colour arrives with the particles as they re-form into the mark.
+        // Gated on terminal mode too — the ascii pass also inks the orbiting
+        // lattice on every other screen, and that stays amber.
+        diaMix += ((faceLogo && mode === "terminal" ? 1 : 0) - diaMix) * 0.08;
+        asciiMaterial.uniforms.uDia.value = diaMix;
+        asciiMaterial.uniforms.uTime.value = t;
         renderer.setRenderTarget(screenRT);
         renderer.render(asciiScene, asciiCamera);
         renderer.setRenderTarget(null);
