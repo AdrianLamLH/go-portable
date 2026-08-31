@@ -30,3 +30,10 @@ build/
 out/
 .docusaurus/
 .turbo/
+
+# Local design scratch — Figma previs and the full-resolution photo originals
+design/
+
+# Blender working files
+*.blend
+*.blend1

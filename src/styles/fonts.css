@@ -1,1 +1,4 @@
 @import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech&family=Share+Tech+Mono&display=swap');
+/* The how_to manual is set in the spread's own faces — Inter for the copy,
+   Roboto Mono for the kickers, filenames and folios. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
