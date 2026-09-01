@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-31T15:50:48.674Z",
+  "updatedAt": "2026-09-01T13:05:49.416Z",
   "topTracks": [
     {
       "id": "22NHkFYbgxB2Zirj29Gbp8",
@@ -50,15 +50,15 @@
       "artist": "Slayyyter"
     },
     {
-      "id": "3iy2QuCtCzpWnR6tia39AB",
-      "uri": "spotify:track:3iy2QuCtCzpWnR6tia39AB",
-      "name": "hate that i made you love me",
-      "artist": "Ariana Grande"
-    },
-    {
       "id": "5GgxJ8afPLKHg4MHIxP0av",
       "uri": "spotify:track:5GgxJ8afPLKHg4MHIxP0av",
       "name": "UNKNOWN LOVERZ",
+      "artist": "Slayyyter"
+    },
+    {
+      "id": "6eqQLOOiqBnrwKQEzXoHll",
+      "uri": "spotify:track:6eqQLOOiqBnrwKQEzXoHll",
+      "name": "CRANK",
       "artist": "Slayyyter"
     }
   ]
