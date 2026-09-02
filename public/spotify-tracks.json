@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-01T13:05:49.416Z",
+  "updatedAt": "2026-09-02T12:33:22.102Z",
   "topTracks": [
     {
       "id": "22NHkFYbgxB2Zirj29Gbp8",
@@ -20,16 +20,16 @@
       "artist": "Slayyyter"
     },
     {
-      "id": "1OWBh1eVxUdA1Z6UA8r4nh",
-      "uri": "spotify:track:1OWBh1eVxUdA1Z6UA8r4nh",
-      "name": "the feeling",
-      "artist": "Steve Lacy"
-    },
-    {
       "id": "5Fdj0DtH4ZhymltyN5xEv2",
       "uri": "spotify:track:5Fdj0DtH4ZhymltyN5xEv2",
       "name": "Camera",
       "artist": "Charli xcx"
+    },
+    {
+      "id": "1OWBh1eVxUdA1Z6UA8r4nh",
+      "uri": "spotify:track:1OWBh1eVxUdA1Z6UA8r4nh",
+      "name": "the feeling",
+      "artist": "Steve Lacy"
     },
     {
       "id": "2itxcGh2MqEGswuXdeRlLL",
@@ -44,6 +44,12 @@
       "artist": "judith"
     },
     {
+      "id": "2IE9mgjkkk7Lfj9wgzz8MT",
+      "uri": "spotify:track:2IE9mgjkkk7Lfj9wgzz8MT",
+      "name": "Suite New Day - from \"Spider-Man: Brand New Day\" Soundtrack",
+      "artist": "Michael Giacchino"
+    },
+    {
       "id": "0rLtUuQgwIlw6vv2eqHKdt",
       "uri": "spotify:track:0rLtUuQgwIlw6vv2eqHKdt",
       "name": "BEAT UP CHANEL$",
@@ -53,12 +59,6 @@
       "id": "5GgxJ8afPLKHg4MHIxP0av",
       "uri": "spotify:track:5GgxJ8afPLKHg4MHIxP0av",
       "name": "UNKNOWN LOVERZ",
-      "artist": "Slayyyter"
-    },
-    {
-      "id": "6eqQLOOiqBnrwKQEzXoHll",
-      "uri": "spotify:track:6eqQLOOiqBnrwKQEzXoHll",
-      "name": "CRANK",
       "artist": "Slayyyter"
     }
   ]
