@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-02T12:33:22.102Z",
+  "updatedAt": "2026-09-03T12:36:35.244Z",
   "topTracks": [
     {
       "id": "22NHkFYbgxB2Zirj29Gbp8",
@@ -44,10 +44,10 @@
       "artist": "judith"
     },
     {
-      "id": "2IE9mgjkkk7Lfj9wgzz8MT",
-      "uri": "spotify:track:2IE9mgjkkk7Lfj9wgzz8MT",
-      "name": "Suite New Day - from \"Spider-Man: Brand New Day\" Soundtrack",
-      "artist": "Michael Giacchino"
+      "id": "06eO9bBnfvyrQ10D0wwGcN",
+      "uri": "spotify:track:06eO9bBnfvyrQ10D0wwGcN",
+      "name": "( fallout )",
+      "artist": "tsubi club"
     },
     {
       "id": "0rLtUuQgwIlw6vv2eqHKdt",
@@ -56,10 +56,10 @@
       "artist": "Slayyyter"
     },
     {
-      "id": "5GgxJ8afPLKHg4MHIxP0av",
-      "uri": "spotify:track:5GgxJ8afPLKHg4MHIxP0av",
-      "name": "UNKNOWN LOVERZ",
-      "artist": "Slayyyter"
+      "id": "2IE9mgjkkk7Lfj9wgzz8MT",
+      "uri": "spotify:track:2IE9mgjkkk7Lfj9wgzz8MT",
+      "name": "Suite New Day - from \"Spider-Man: Brand New Day\" Soundtrack",
+      "artist": "Michael Giacchino"
     }
   ]
 }
