@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-03T12:36:35.244Z",
+  "updatedAt": "2026-09-04T12:30:32.420Z",
   "topTracks": [
     {
       "id": "22NHkFYbgxB2Zirj29Gbp8",
@@ -50,16 +50,16 @@
       "artist": "tsubi club"
     },
     {
+      "id": "25CNrhbSLLQs98AxFVTpIP",
+      "uri": "spotify:track:25CNrhbSLLQs98AxFVTpIP",
+      "name": "Admit It",
+      "artist": "yeemz"
+    },
+    {
       "id": "0rLtUuQgwIlw6vv2eqHKdt",
       "uri": "spotify:track:0rLtUuQgwIlw6vv2eqHKdt",
       "name": "BEAT UP CHANEL$",
       "artist": "Slayyyter"
-    },
-    {
-      "id": "2IE9mgjkkk7Lfj9wgzz8MT",
-      "uri": "spotify:track:2IE9mgjkkk7Lfj9wgzz8MT",
-      "name": "Suite New Day - from \"Spider-Man: Brand New Day\" Soundtrack",
-      "artist": "Michael Giacchino"
     }
   ]
 }
