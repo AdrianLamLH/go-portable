@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-04T12:30:32.420Z",
+  "updatedAt": "2026-09-05T11:38:48.207Z",
   "topTracks": [
     {
       "id": "22NHkFYbgxB2Zirj29Gbp8",
@@ -38,16 +38,16 @@
       "artist": "Phoebe Bridgers"
     },
     {
-      "id": "5zYrrz1QNFfUHYaSKtNooJ",
-      "uri": "spotify:track:5zYrrz1QNFfUHYaSKtNooJ",
-      "name": "DIVA",
-      "artist": "judith"
-    },
-    {
       "id": "06eO9bBnfvyrQ10D0wwGcN",
       "uri": "spotify:track:06eO9bBnfvyrQ10D0wwGcN",
       "name": "( fallout )",
       "artist": "tsubi club"
+    },
+    {
+      "id": "5zYrrz1QNFfUHYaSKtNooJ",
+      "uri": "spotify:track:5zYrrz1QNFfUHYaSKtNooJ",
+      "name": "DIVA",
+      "artist": "judith"
     },
     {
       "id": "25CNrhbSLLQs98AxFVTpIP",
