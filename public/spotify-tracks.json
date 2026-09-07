@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-05T11:38:48.207Z",
+  "updatedAt": "2026-09-07T13:58:44.767Z",
   "topTracks": [
     {
       "id": "22NHkFYbgxB2Zirj29Gbp8",
@@ -26,12 +26,6 @@
       "artist": "Charli xcx"
     },
     {
-      "id": "1OWBh1eVxUdA1Z6UA8r4nh",
-      "uri": "spotify:track:1OWBh1eVxUdA1Z6UA8r4nh",
-      "name": "the feeling",
-      "artist": "Steve Lacy"
-    },
-    {
       "id": "2itxcGh2MqEGswuXdeRlLL",
       "uri": "spotify:track:2itxcGh2MqEGswuXdeRlLL",
       "name": "The Outside",
@@ -42,6 +36,12 @@
       "uri": "spotify:track:06eO9bBnfvyrQ10D0wwGcN",
       "name": "( fallout )",
       "artist": "tsubi club"
+    },
+    {
+      "id": "1OWBh1eVxUdA1Z6UA8r4nh",
+      "uri": "spotify:track:1OWBh1eVxUdA1Z6UA8r4nh",
+      "name": "the feeling",
+      "artist": "Steve Lacy"
     },
     {
       "id": "5zYrrz1QNFfUHYaSKtNooJ",
