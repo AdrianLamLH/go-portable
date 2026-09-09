@@ -1,11 +1,17 @@
 {
-  "updatedAt": "2026-09-08T12:37:17.513Z",
+  "updatedAt": "2026-09-09T12:44:28.248Z",
   "topTracks": [
     {
       "id": "22NHkFYbgxB2Zirj29Gbp8",
       "uri": "spotify:track:22NHkFYbgxB2Zirj29Gbp8",
       "name": "oh yeah?",
       "artist": "Steve Lacy"
+    },
+    {
+      "id": "2itxcGh2MqEGswuXdeRlLL",
+      "uri": "spotify:track:2itxcGh2MqEGswuXdeRlLL",
+      "name": "The Outside",
+      "artist": "Phoebe Bridgers"
     },
     {
       "id": "3FZoov0ORtnr8TznSNI1y2",
@@ -20,16 +26,16 @@
       "artist": "Slayyyter"
     },
     {
+      "id": "5zYrrz1QNFfUHYaSKtNooJ",
+      "uri": "spotify:track:5zYrrz1QNFfUHYaSKtNooJ",
+      "name": "DIVA",
+      "artist": "judith"
+    },
+    {
       "id": "5Fdj0DtH4ZhymltyN5xEv2",
       "uri": "spotify:track:5Fdj0DtH4ZhymltyN5xEv2",
       "name": "Camera",
       "artist": "Charli xcx"
-    },
-    {
-      "id": "2itxcGh2MqEGswuXdeRlLL",
-      "uri": "spotify:track:2itxcGh2MqEGswuXdeRlLL",
-      "name": "The Outside",
-      "artist": "Phoebe Bridgers"
     },
     {
       "id": "06eO9bBnfvyrQ10D0wwGcN",
@@ -38,10 +44,10 @@
       "artist": "tsubi club"
     },
     {
-      "id": "5zYrrz1QNFfUHYaSKtNooJ",
-      "uri": "spotify:track:5zYrrz1QNFfUHYaSKtNooJ",
-      "name": "DIVA",
-      "artist": "judith"
+      "id": "4alolIY2756SjJhruoT1ZJ",
+      "uri": "spotify:track:4alolIY2756SjJhruoT1ZJ",
+      "name": "Flyen",
+      "artist": "glaive, kurtains"
     },
     {
       "id": "25CNrhbSLLQs98AxFVTpIP",
@@ -50,16 +56,10 @@
       "artist": "yeemz"
     },
     {
-      "id": "0rLtUuQgwIlw6vv2eqHKdt",
-      "uri": "spotify:track:0rLtUuQgwIlw6vv2eqHKdt",
-      "name": "BEAT UP CHANEL$",
-      "artist": "Slayyyter"
-    },
-    {
-      "id": "6J634TZ2oCHjSwd13yuKHZ",
-      "uri": "spotify:track:6J634TZ2oCHjSwd13yuKHZ",
-      "name": "bbbackboard",
-      "artist": "tsubi club"
+      "id": "3EEUi4q95LmCjJfRzP1epo",
+      "uri": "spotify:track:3EEUi4q95LmCjJfRzP1epo",
+      "name": "TELL ME WHAT I DID",
+      "artist": "Tiffany Day"
     }
   ]
 }
