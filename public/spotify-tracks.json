@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-09T12:44:28.248Z",
+  "updatedAt": "2026-09-10T12:42:19.123Z",
   "topTracks": [
     {
       "id": "22NHkFYbgxB2Zirj29Gbp8",
@@ -26,6 +26,12 @@
       "artist": "Slayyyter"
     },
     {
+      "id": "06eO9bBnfvyrQ10D0wwGcN",
+      "uri": "spotify:track:06eO9bBnfvyrQ10D0wwGcN",
+      "name": "( fallout )",
+      "artist": "tsubi club"
+    },
+    {
       "id": "5zYrrz1QNFfUHYaSKtNooJ",
       "uri": "spotify:track:5zYrrz1QNFfUHYaSKtNooJ",
       "name": "DIVA",
@@ -38,28 +44,22 @@
       "artist": "Charli xcx"
     },
     {
-      "id": "06eO9bBnfvyrQ10D0wwGcN",
-      "uri": "spotify:track:06eO9bBnfvyrQ10D0wwGcN",
-      "name": "( fallout )",
-      "artist": "tsubi club"
-    },
-    {
       "id": "4alolIY2756SjJhruoT1ZJ",
       "uri": "spotify:track:4alolIY2756SjJhruoT1ZJ",
       "name": "Flyen",
       "artist": "glaive, kurtains"
     },
     {
+      "id": "4mMW7j3QfSOAR2MSsTKnaq",
+      "uri": "spotify:track:4mMW7j3QfSOAR2MSsTKnaq",
+      "name": "( ╥﹏╥ )",
+      "artist": "tsubi club"
+    },
+    {
       "id": "25CNrhbSLLQs98AxFVTpIP",
       "uri": "spotify:track:25CNrhbSLLQs98AxFVTpIP",
       "name": "Admit It",
       "artist": "yeemz"
-    },
-    {
-      "id": "3EEUi4q95LmCjJfRzP1epo",
-      "uri": "spotify:track:3EEUi4q95LmCjJfRzP1epo",
-      "name": "TELL ME WHAT I DID",
-      "artist": "Tiffany Day"
     }
   ]
 }
