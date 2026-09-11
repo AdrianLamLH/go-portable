@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-10T12:42:19.123Z",
+  "updatedAt": "2026-09-11T12:37:01.315Z",
   "topTracks": [
     {
       "id": "22NHkFYbgxB2Zirj29Gbp8",
@@ -12,18 +12,6 @@
       "uri": "spotify:track:2itxcGh2MqEGswuXdeRlLL",
       "name": "The Outside",
       "artist": "Phoebe Bridgers"
-    },
-    {
-      "id": "3FZoov0ORtnr8TznSNI1y2",
-      "uri": "spotify:track:3FZoov0ORtnr8TznSNI1y2",
-      "name": "brand new chanel$",
-      "artist": "Slayyyter"
-    },
-    {
-      "id": "6Xp2Zm2sJLdODReZWBBifO",
-      "uri": "spotify:track:6Xp2Zm2sJLdODReZWBBifO",
-      "name": "DANCE...",
-      "artist": "Slayyyter"
     },
     {
       "id": "06eO9bBnfvyrQ10D0wwGcN",
@@ -60,6 +48,18 @@
       "uri": "spotify:track:25CNrhbSLLQs98AxFVTpIP",
       "name": "Admit It",
       "artist": "yeemz"
+    },
+    {
+      "id": "3FZoov0ORtnr8TznSNI1y2",
+      "uri": "spotify:track:3FZoov0ORtnr8TznSNI1y2",
+      "name": "brand new chanel$",
+      "artist": "Slayyyter"
+    },
+    {
+      "id": "6J634TZ2oCHjSwd13yuKHZ",
+      "uri": "spotify:track:6J634TZ2oCHjSwd13yuKHZ",
+      "name": "bbbackboard",
+      "artist": "tsubi club"
     }
   ]
 }
