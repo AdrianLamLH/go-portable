@@ -1,17 +1,11 @@
 {
-  "updatedAt": "2026-09-11T12:37:01.315Z",
+  "updatedAt": "2026-09-12T11:58:12.232Z",
   "topTracks": [
     {
       "id": "22NHkFYbgxB2Zirj29Gbp8",
       "uri": "spotify:track:22NHkFYbgxB2Zirj29Gbp8",
       "name": "oh yeah?",
       "artist": "Steve Lacy"
-    },
-    {
-      "id": "2itxcGh2MqEGswuXdeRlLL",
-      "uri": "spotify:track:2itxcGh2MqEGswuXdeRlLL",
-      "name": "The Outside",
-      "artist": "Phoebe Bridgers"
     },
     {
       "id": "06eO9bBnfvyrQ10D0wwGcN",
@@ -24,6 +18,12 @@
       "uri": "spotify:track:5zYrrz1QNFfUHYaSKtNooJ",
       "name": "DIVA",
       "artist": "judith"
+    },
+    {
+      "id": "2itxcGh2MqEGswuXdeRlLL",
+      "uri": "spotify:track:2itxcGh2MqEGswuXdeRlLL",
+      "name": "The Outside",
+      "artist": "Phoebe Bridgers"
     },
     {
       "id": "5Fdj0DtH4ZhymltyN5xEv2",
@@ -56,9 +56,9 @@
       "artist": "Slayyyter"
     },
     {
-      "id": "6J634TZ2oCHjSwd13yuKHZ",
-      "uri": "spotify:track:6J634TZ2oCHjSwd13yuKHZ",
-      "name": "bbbackboard",
+      "id": "0wOs5b6Ltx8rrQbFW19mq7",
+      "uri": "spotify:track:0wOs5b6Ltx8rrQbFW19mq7",
+      "name": "reclusive wizard leaves tower",
       "artist": "tsubi club"
     }
   ]
