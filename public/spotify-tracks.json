@@ -1,11 +1,23 @@
 {
-  "updatedAt": "2026-09-12T11:58:12.232Z",
+  "updatedAt": "2026-09-16T13:08:46.301Z",
   "topTracks": [
     {
       "id": "22NHkFYbgxB2Zirj29Gbp8",
       "uri": "spotify:track:22NHkFYbgxB2Zirj29Gbp8",
       "name": "oh yeah?",
       "artist": "Steve Lacy"
+    },
+    {
+      "id": "5Fdj0DtH4ZhymltyN5xEv2",
+      "uri": "spotify:track:5Fdj0DtH4ZhymltyN5xEv2",
+      "name": "Camera",
+      "artist": "Charli xcx"
+    },
+    {
+      "id": "1eqUenDSQsy87cpoogbKvi",
+      "uri": "spotify:track:1eqUenDSQsy87cpoogbKvi",
+      "name": "Não Identificado",
+      "artist": "Gal Costa"
     },
     {
       "id": "06eO9bBnfvyrQ10D0wwGcN",
@@ -20,22 +32,22 @@
       "artist": "judith"
     },
     {
+      "id": "4alolIY2756SjJhruoT1ZJ",
+      "uri": "spotify:track:4alolIY2756SjJhruoT1ZJ",
+      "name": "Flyen",
+      "artist": "glaive, kurtains"
+    },
+    {
       "id": "2itxcGh2MqEGswuXdeRlLL",
       "uri": "spotify:track:2itxcGh2MqEGswuXdeRlLL",
       "name": "The Outside",
       "artist": "Phoebe Bridgers"
     },
     {
-      "id": "5Fdj0DtH4ZhymltyN5xEv2",
-      "uri": "spotify:track:5Fdj0DtH4ZhymltyN5xEv2",
-      "name": "Camera",
-      "artist": "Charli xcx"
-    },
-    {
-      "id": "4alolIY2756SjJhruoT1ZJ",
-      "uri": "spotify:track:4alolIY2756SjJhruoT1ZJ",
-      "name": "Flyen",
-      "artist": "glaive, kurtains"
+      "id": "1FKFCvi0i46qEJLZSEBH8p",
+      "uri": "spotify:track:1FKFCvi0i46qEJLZSEBH8p",
+      "name": "I Get Money",
+      "artist": "50 Cent"
     },
     {
       "id": "4mMW7j3QfSOAR2MSsTKnaq",
@@ -48,18 +60,6 @@
       "uri": "spotify:track:25CNrhbSLLQs98AxFVTpIP",
       "name": "Admit It",
       "artist": "yeemz"
-    },
-    {
-      "id": "3FZoov0ORtnr8TznSNI1y2",
-      "uri": "spotify:track:3FZoov0ORtnr8TznSNI1y2",
-      "name": "brand new chanel$",
-      "artist": "Slayyyter"
-    },
-    {
-      "id": "0wOs5b6Ltx8rrQbFW19mq7",
-      "uri": "spotify:track:0wOs5b6Ltx8rrQbFW19mq7",
-      "name": "reclusive wizard leaves tower",
-      "artist": "tsubi club"
     }
   ]
 }
