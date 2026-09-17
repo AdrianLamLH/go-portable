@@ -1,12 +1,6 @@
 {
-  "updatedAt": "2026-09-16T13:08:46.301Z",
+  "updatedAt": "2026-09-17T13:02:50.463Z",
   "topTracks": [
-    {
-      "id": "22NHkFYbgxB2Zirj29Gbp8",
-      "uri": "spotify:track:22NHkFYbgxB2Zirj29Gbp8",
-      "name": "oh yeah?",
-      "artist": "Steve Lacy"
-    },
     {
       "id": "5Fdj0DtH4ZhymltyN5xEv2",
       "uri": "spotify:track:5Fdj0DtH4ZhymltyN5xEv2",
@@ -38,6 +32,12 @@
       "artist": "glaive, kurtains"
     },
     {
+      "id": "2LyOfBmxZXWGWpePgSJeDy",
+      "uri": "spotify:track:2LyOfBmxZXWGWpePgSJeDy",
+      "name": "BUMPR",
+      "artist": "tsubi club"
+    },
+    {
       "id": "2itxcGh2MqEGswuXdeRlLL",
       "uri": "spotify:track:2itxcGh2MqEGswuXdeRlLL",
       "name": "The Outside",
@@ -50,16 +50,16 @@
       "artist": "50 Cent"
     },
     {
+      "id": "22NHkFYbgxB2Zirj29Gbp8",
+      "uri": "spotify:track:22NHkFYbgxB2Zirj29Gbp8",
+      "name": "oh yeah?",
+      "artist": "Steve Lacy"
+    },
+    {
       "id": "4mMW7j3QfSOAR2MSsTKnaq",
       "uri": "spotify:track:4mMW7j3QfSOAR2MSsTKnaq",
       "name": "( ╥﹏╥ )",
       "artist": "tsubi club"
-    },
-    {
-      "id": "25CNrhbSLLQs98AxFVTpIP",
-      "uri": "spotify:track:25CNrhbSLLQs98AxFVTpIP",
-      "name": "Admit It",
-      "artist": "yeemz"
     }
   ]
 }
