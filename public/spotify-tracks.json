@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-18T12:42:53.061Z",
+  "updatedAt": "2026-09-21T14:50:44.755Z",
   "topTracks": [
     {
       "id": "1eqUenDSQsy87cpoogbKvi",
@@ -8,22 +8,10 @@
       "artist": "Gal Costa"
     },
     {
-      "id": "5Fdj0DtH4ZhymltyN5xEv2",
-      "uri": "spotify:track:5Fdj0DtH4ZhymltyN5xEv2",
-      "name": "Camera",
-      "artist": "Charli xcx"
-    },
-    {
       "id": "06eO9bBnfvyrQ10D0wwGcN",
       "uri": "spotify:track:06eO9bBnfvyrQ10D0wwGcN",
       "name": "( fallout )",
       "artist": "tsubi club"
-    },
-    {
-      "id": "5zYrrz1QNFfUHYaSKtNooJ",
-      "uri": "spotify:track:5zYrrz1QNFfUHYaSKtNooJ",
-      "name": "DIVA",
-      "artist": "judith"
     },
     {
       "id": "4alolIY2756SjJhruoT1ZJ",
@@ -38,28 +26,40 @@
       "artist": "tsubi club"
     },
     {
-      "id": "2itxcGh2MqEGswuXdeRlLL",
-      "uri": "spotify:track:2itxcGh2MqEGswuXdeRlLL",
-      "name": "The Outside",
-      "artist": "Phoebe Bridgers"
-    },
-    {
       "id": "1FKFCvi0i46qEJLZSEBH8p",
       "uri": "spotify:track:1FKFCvi0i46qEJLZSEBH8p",
       "name": "I Get Money",
       "artist": "50 Cent"
     },
     {
-      "id": "22NHkFYbgxB2Zirj29Gbp8",
-      "uri": "spotify:track:22NHkFYbgxB2Zirj29Gbp8",
-      "name": "oh yeah?",
-      "artist": "Steve Lacy"
+      "id": "5zYrrz1QNFfUHYaSKtNooJ",
+      "uri": "spotify:track:5zYrrz1QNFfUHYaSKtNooJ",
+      "name": "DIVA",
+      "artist": "judith"
     },
     {
       "id": "25CNrhbSLLQs98AxFVTpIP",
       "uri": "spotify:track:25CNrhbSLLQs98AxFVTpIP",
       "name": "Admit It",
       "artist": "yeemz"
+    },
+    {
+      "id": "4mMW7j3QfSOAR2MSsTKnaq",
+      "uri": "spotify:track:4mMW7j3QfSOAR2MSsTKnaq",
+      "name": "( ╥﹏╥ )",
+      "artist": "tsubi club"
+    },
+    {
+      "id": "0wOs5b6Ltx8rrQbFW19mq7",
+      "uri": "spotify:track:0wOs5b6Ltx8rrQbFW19mq7",
+      "name": "reclusive wizard leaves tower",
+      "artist": "tsubi club"
+    },
+    {
+      "id": "6J634TZ2oCHjSwd13yuKHZ",
+      "uri": "spotify:track:6J634TZ2oCHjSwd13yuKHZ",
+      "name": "bbbackboard",
+      "artist": "tsubi club"
     }
   ]
 }
