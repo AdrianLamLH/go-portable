@@ -1,23 +1,11 @@
 {
-  "updatedAt": "2026-09-28T16:27:20.168Z",
+  "updatedAt": "2026-09-29T14:37:12.689Z",
   "topTracks": [
     {
       "id": "1eqUenDSQsy87cpoogbKvi",
       "uri": "spotify:track:1eqUenDSQsy87cpoogbKvi",
       "name": "Não Identificado",
       "artist": "Gal Costa"
-    },
-    {
-      "id": "06eO9bBnfvyrQ10D0wwGcN",
-      "uri": "spotify:track:06eO9bBnfvyrQ10D0wwGcN",
-      "name": "( fallout )",
-      "artist": "tsubi club"
-    },
-    {
-      "id": "4alolIY2756SjJhruoT1ZJ",
-      "uri": "spotify:track:4alolIY2756SjJhruoT1ZJ",
-      "name": "Flyen",
-      "artist": "glaive, kurtains"
     },
     {
       "id": "2LyOfBmxZXWGWpePgSJeDy",
@@ -44,10 +32,10 @@
       "artist": "tsubi club"
     },
     {
-      "id": "25CNrhbSLLQs98AxFVTpIP",
-      "uri": "spotify:track:25CNrhbSLLQs98AxFVTpIP",
-      "name": "Admit It",
-      "artist": "yeemz"
+      "id": "06eO9bBnfvyrQ10D0wwGcN",
+      "uri": "spotify:track:06eO9bBnfvyrQ10D0wwGcN",
+      "name": "( fallout )",
+      "artist": "tsubi club"
     },
     {
       "id": "0wOs5b6Ltx8rrQbFW19mq7",
@@ -60,6 +48,18 @@
       "uri": "spotify:track:6J634TZ2oCHjSwd13yuKHZ",
       "name": "bbbackboard",
       "artist": "tsubi club"
+    },
+    {
+      "id": "4alolIY2756SjJhruoT1ZJ",
+      "uri": "spotify:track:4alolIY2756SjJhruoT1ZJ",
+      "name": "Flyen",
+      "artist": "glaive, kurtains"
+    },
+    {
+      "id": "0IeBxP5BlIH2BDhQYVsRq3",
+      "uri": "spotify:track:0IeBxP5BlIH2BDhQYVsRq3",
+      "name": "Wallflower",
+      "artist": "Dominic Fike"
     }
   ]
 }
