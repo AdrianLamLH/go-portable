@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-30T14:37:18.323Z",
+  "updatedAt": "2026-10-01T15:06:07.129Z",
   "topTracks": [
     {
       "id": "1eqUenDSQsy87cpoogbKvi",
@@ -8,10 +8,10 @@
       "artist": "Gal Costa"
     },
     {
-      "id": "2LyOfBmxZXWGWpePgSJeDy",
-      "uri": "spotify:track:2LyOfBmxZXWGWpePgSJeDy",
-      "name": "BUMPR",
-      "artist": "tsubi club"
+      "id": "5I2pryLKw0kmA41kEBBhFP",
+      "uri": "spotify:track:5I2pryLKw0kmA41kEBBhFP",
+      "name": "Land of Hope and Dreams",
+      "artist": "Bruce Springsteen"
     },
     {
       "id": "4FXQTLl5v1jlaLvrp16mFk",
@@ -20,28 +20,10 @@
       "artist": "Amie Blu"
     },
     {
-      "id": "5I2pryLKw0kmA41kEBBhFP",
-      "uri": "spotify:track:5I2pryLKw0kmA41kEBBhFP",
-      "name": "Land of Hope and Dreams",
-      "artist": "Bruce Springsteen"
-    },
-    {
       "id": "1FKFCvi0i46qEJLZSEBH8p",
       "uri": "spotify:track:1FKFCvi0i46qEJLZSEBH8p",
       "name": "I Get Money",
       "artist": "50 Cent"
-    },
-    {
-      "id": "06eO9bBnfvyrQ10D0wwGcN",
-      "uri": "spotify:track:06eO9bBnfvyrQ10D0wwGcN",
-      "name": "( fallout )",
-      "artist": "tsubi club"
-    },
-    {
-      "id": "4mMW7j3QfSOAR2MSsTKnaq",
-      "uri": "spotify:track:4mMW7j3QfSOAR2MSsTKnaq",
-      "name": "( ╥﹏╥ )",
-      "artist": "tsubi club"
     },
     {
       "id": "0wOs5b6Ltx8rrQbFW19mq7",
@@ -50,9 +32,15 @@
       "artist": "tsubi club"
     },
     {
-      "id": "6J634TZ2oCHjSwd13yuKHZ",
-      "uri": "spotify:track:6J634TZ2oCHjSwd13yuKHZ",
-      "name": "bbbackboard",
+      "id": "0IeBxP5BlIH2BDhQYVsRq3",
+      "uri": "spotify:track:0IeBxP5BlIH2BDhQYVsRq3",
+      "name": "Wallflower",
+      "artist": "Dominic Fike"
+    },
+    {
+      "id": "2LyOfBmxZXWGWpePgSJeDy",
+      "uri": "spotify:track:2LyOfBmxZXWGWpePgSJeDy",
+      "name": "BUMPR",
       "artist": "tsubi club"
     },
     {
@@ -60,6 +48,18 @@
       "uri": "spotify:track:4alolIY2756SjJhruoT1ZJ",
       "name": "Flyen",
       "artist": "glaive, kurtains"
+    },
+    {
+      "id": "5aOzorPE9Pa7AxXG9hnXMG",
+      "uri": "spotify:track:5aOzorPE9Pa7AxXG9hnXMG",
+      "name": "BURNMATERIAL",
+      "artist": "tsubi club"
+    },
+    {
+      "id": "09IT8imSuZBu1mjhNWHjuo",
+      "uri": "spotify:track:09IT8imSuZBu1mjhNWHjuo",
+      "name": "Still Standing",
+      "artist": "Phoebe Bridgers"
     }
   ]
 }
