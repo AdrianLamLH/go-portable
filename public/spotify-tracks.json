@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-01T15:06:07.129Z",
+  "updatedAt": "2026-10-02T14:27:17.367Z",
   "topTracks": [
     {
       "id": "1eqUenDSQsy87cpoogbKvi",
@@ -26,16 +26,22 @@
       "artist": "50 Cent"
     },
     {
-      "id": "0wOs5b6Ltx8rrQbFW19mq7",
-      "uri": "spotify:track:0wOs5b6Ltx8rrQbFW19mq7",
-      "name": "reclusive wizard leaves tower",
-      "artist": "tsubi club"
-    },
-    {
       "id": "0IeBxP5BlIH2BDhQYVsRq3",
       "uri": "spotify:track:0IeBxP5BlIH2BDhQYVsRq3",
       "name": "Wallflower",
       "artist": "Dominic Fike"
+    },
+    {
+      "id": "09IT8imSuZBu1mjhNWHjuo",
+      "uri": "spotify:track:09IT8imSuZBu1mjhNWHjuo",
+      "name": "Still Standing",
+      "artist": "Phoebe Bridgers"
+    },
+    {
+      "id": "0UN5OvKlbg06LnZyVk48ll",
+      "uri": "spotify:track:0UN5OvKlbg06LnZyVk48ll",
+      "name": "Loungin (Who Do Ya Luv) - Remix",
+      "artist": "LL COOL J, Total"
     },
     {
       "id": "2LyOfBmxZXWGWpePgSJeDy",
@@ -54,12 +60,6 @@
       "uri": "spotify:track:5aOzorPE9Pa7AxXG9hnXMG",
       "name": "BURNMATERIAL",
       "artist": "tsubi club"
-    },
-    {
-      "id": "09IT8imSuZBu1mjhNWHjuo",
-      "uri": "spotify:track:09IT8imSuZBu1mjhNWHjuo",
-      "name": "Still Standing",
-      "artist": "Phoebe Bridgers"
     }
   ]
 }
