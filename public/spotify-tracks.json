@@ -1,17 +1,17 @@
 {
-  "updatedAt": "2026-10-02T14:27:17.367Z",
+  "updatedAt": "2026-10-03T13:02:04.800Z",
   "topTracks": [
-    {
-      "id": "1eqUenDSQsy87cpoogbKvi",
-      "uri": "spotify:track:1eqUenDSQsy87cpoogbKvi",
-      "name": "Não Identificado",
-      "artist": "Gal Costa"
-    },
     {
       "id": "5I2pryLKw0kmA41kEBBhFP",
       "uri": "spotify:track:5I2pryLKw0kmA41kEBBhFP",
       "name": "Land of Hope and Dreams",
       "artist": "Bruce Springsteen"
+    },
+    {
+      "id": "1eqUenDSQsy87cpoogbKvi",
+      "uri": "spotify:track:1eqUenDSQsy87cpoogbKvi",
+      "name": "Não Identificado",
+      "artist": "Gal Costa"
     },
     {
       "id": "4FXQTLl5v1jlaLvrp16mFk",
@@ -56,10 +56,10 @@
       "artist": "glaive, kurtains"
     },
     {
-      "id": "5aOzorPE9Pa7AxXG9hnXMG",
-      "uri": "spotify:track:5aOzorPE9Pa7AxXG9hnXMG",
-      "name": "BURNMATERIAL",
-      "artist": "tsubi club"
+      "id": "0vS87q256EOA3p80doMehD",
+      "uri": "spotify:track:0vS87q256EOA3p80doMehD",
+      "name": "gaga",
+      "artist": "Peterparker69, Jeter, Y ohtrixpointnever"
     }
   ]
 }
