@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-03T13:02:04.800Z",
+  "updatedAt": "2026-10-04T13:41:35.668Z",
   "topTracks": [
     {
       "id": "5I2pryLKw0kmA41kEBBhFP",
@@ -44,22 +44,22 @@
       "artist": "LL COOL J, Total"
     },
     {
-      "id": "2LyOfBmxZXWGWpePgSJeDy",
-      "uri": "spotify:track:2LyOfBmxZXWGWpePgSJeDy",
-      "name": "BUMPR",
-      "artist": "tsubi club"
-    },
-    {
-      "id": "4alolIY2756SjJhruoT1ZJ",
-      "uri": "spotify:track:4alolIY2756SjJhruoT1ZJ",
-      "name": "Flyen",
-      "artist": "glaive, kurtains"
-    },
-    {
       "id": "0vS87q256EOA3p80doMehD",
       "uri": "spotify:track:0vS87q256EOA3p80doMehD",
       "name": "gaga",
       "artist": "Peterparker69, Jeter, Y ohtrixpointnever"
+    },
+    {
+      "id": "2eDvflMCe9ssOkUJrxqikB",
+      "uri": "spotify:track:2eDvflMCe9ssOkUJrxqikB",
+      "name": "Thé à la menthe",
+      "artist": "La Caution"
+    },
+    {
+      "id": "2hAQCoAswuQ643VhIuRC2p",
+      "uri": "spotify:track:2hAQCoAswuQ643VhIuRC2p",
+      "name": "The Governor’s Waltz",
+      "artist": "Phoebe Bridgers"
     }
   ]
 }
