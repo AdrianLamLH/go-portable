@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-04T13:41:35.668Z",
+  "updatedAt": "2026-10-05T16:48:11.768Z",
   "topTracks": [
     {
       "id": "5I2pryLKw0kmA41kEBBhFP",
@@ -18,6 +18,12 @@
       "uri": "spotify:track:4FXQTLl5v1jlaLvrp16mFk",
       "name": "trees for the woods",
       "artist": "Amie Blu"
+    },
+    {
+      "id": "1QA6xgUEZ1BqOj2xuroM3N",
+      "uri": "spotify:track:1QA6xgUEZ1BqOj2xuroM3N",
+      "name": "On Video",
+      "artist": "Phoebe Bridgers"
     },
     {
       "id": "1FKFCvi0i46qEJLZSEBH8p",
@@ -54,12 +60,6 @@
       "uri": "spotify:track:2eDvflMCe9ssOkUJrxqikB",
       "name": "Thé à la menthe",
       "artist": "La Caution"
-    },
-    {
-      "id": "2hAQCoAswuQ643VhIuRC2p",
-      "uri": "spotify:track:2hAQCoAswuQ643VhIuRC2p",
-      "name": "The Governor’s Waltz",
-      "artist": "Phoebe Bridgers"
     }
   ]
 }
