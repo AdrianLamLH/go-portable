@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-07T15:05:08.188Z",
+  "updatedAt": "2026-10-10T14:13:58.727Z",
   "topTracks": [
     {
       "id": "5I2pryLKw0kmA41kEBBhFP",
@@ -14,6 +14,12 @@
       "artist": "Gal Costa"
     },
     {
+      "id": "1FKFCvi0i46qEJLZSEBH8p",
+      "uri": "spotify:track:1FKFCvi0i46qEJLZSEBH8p",
+      "name": "I Get Money",
+      "artist": "50 Cent"
+    },
+    {
       "id": "4FXQTLl5v1jlaLvrp16mFk",
       "uri": "spotify:track:4FXQTLl5v1jlaLvrp16mFk",
       "name": "trees for the woods",
@@ -24,12 +30,6 @@
       "uri": "spotify:track:1QA6xgUEZ1BqOj2xuroM3N",
       "name": "On Video",
       "artist": "Phoebe Bridgers"
-    },
-    {
-      "id": "1FKFCvi0i46qEJLZSEBH8p",
-      "uri": "spotify:track:1FKFCvi0i46qEJLZSEBH8p",
-      "name": "I Get Money",
-      "artist": "50 Cent"
     },
     {
       "id": "0IeBxP5BlIH2BDhQYVsRq3",
