@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-10T14:13:58.727Z",
+  "updatedAt": "2026-10-12T17:22:36.871Z",
   "topTracks": [
     {
       "id": "5I2pryLKw0kmA41kEBBhFP",
@@ -12,12 +12,6 @@
       "uri": "spotify:track:1eqUenDSQsy87cpoogbKvi",
       "name": "Não Identificado",
       "artist": "Gal Costa"
-    },
-    {
-      "id": "1FKFCvi0i46qEJLZSEBH8p",
-      "uri": "spotify:track:1FKFCvi0i46qEJLZSEBH8p",
-      "name": "I Get Money",
-      "artist": "50 Cent"
     },
     {
       "id": "4FXQTLl5v1jlaLvrp16mFk",
@@ -44,12 +38,6 @@
       "artist": "Phoebe Bridgers"
     },
     {
-      "id": "0UN5OvKlbg06LnZyVk48ll",
-      "uri": "spotify:track:0UN5OvKlbg06LnZyVk48ll",
-      "name": "Loungin (Who Do Ya Luv) - Remix",
-      "artist": "LL COOL J, Total"
-    },
-    {
       "id": "0vS87q256EOA3p80doMehD",
       "uri": "spotify:track:0vS87q256EOA3p80doMehD",
       "name": "gaga",
@@ -60,6 +48,18 @@
       "uri": "spotify:track:0bGImSqDB2ebdeoCidUC8o",
       "name": "BLACKOUT",
       "artist": "Turnstile"
+    },
+    {
+      "id": "2eDvflMCe9ssOkUJrxqikB",
+      "uri": "spotify:track:2eDvflMCe9ssOkUJrxqikB",
+      "name": "Thé à la menthe",
+      "artist": "La Caution"
+    },
+    {
+      "id": "2hAQCoAswuQ643VhIuRC2p",
+      "uri": "spotify:track:2hAQCoAswuQ643VhIuRC2p",
+      "name": "The Governor’s Waltz",
+      "artist": "Phoebe Bridgers"
     }
   ]
 }
