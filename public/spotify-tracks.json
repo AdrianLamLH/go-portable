@@ -1,17 +1,11 @@
 {
-  "updatedAt": "2026-10-12T17:22:36.871Z",
+  "updatedAt": "2026-10-13T15:34:56.615Z",
   "topTracks": [
     {
       "id": "5I2pryLKw0kmA41kEBBhFP",
       "uri": "spotify:track:5I2pryLKw0kmA41kEBBhFP",
       "name": "Land of Hope and Dreams",
       "artist": "Bruce Springsteen"
-    },
-    {
-      "id": "1eqUenDSQsy87cpoogbKvi",
-      "uri": "spotify:track:1eqUenDSQsy87cpoogbKvi",
-      "name": "Não Identificado",
-      "artist": "Gal Costa"
     },
     {
       "id": "4FXQTLl5v1jlaLvrp16mFk",
@@ -26,16 +20,16 @@
       "artist": "Phoebe Bridgers"
     },
     {
-      "id": "0IeBxP5BlIH2BDhQYVsRq3",
-      "uri": "spotify:track:0IeBxP5BlIH2BDhQYVsRq3",
-      "name": "Wallflower",
-      "artist": "Dominic Fike"
-    },
-    {
       "id": "09IT8imSuZBu1mjhNWHjuo",
       "uri": "spotify:track:09IT8imSuZBu1mjhNWHjuo",
       "name": "Still Standing",
       "artist": "Phoebe Bridgers"
+    },
+    {
+      "id": "4edmBZ5KvOETrP0OsAw8nS",
+      "uri": "spotify:track:4edmBZ5KvOETrP0OsAw8nS",
+      "name": "I Believe In You",
+      "artist": "Heathers"
     },
     {
       "id": "0vS87q256EOA3p80doMehD",
@@ -48,6 +42,12 @@
       "uri": "spotify:track:0bGImSqDB2ebdeoCidUC8o",
       "name": "BLACKOUT",
       "artist": "Turnstile"
+    },
+    {
+      "id": "1eqUenDSQsy87cpoogbKvi",
+      "uri": "spotify:track:1eqUenDSQsy87cpoogbKvi",
+      "name": "Não Identificado",
+      "artist": "Gal Costa"
     },
     {
       "id": "2eDvflMCe9ssOkUJrxqikB",
