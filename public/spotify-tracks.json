@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-13T15:34:56.615Z",
+  "updatedAt": "2026-10-14T13:18:45.508Z",
   "topTracks": [
     {
       "id": "5I2pryLKw0kmA41kEBBhFP",
@@ -8,10 +8,10 @@
       "artist": "Bruce Springsteen"
     },
     {
-      "id": "4FXQTLl5v1jlaLvrp16mFk",
-      "uri": "spotify:track:4FXQTLl5v1jlaLvrp16mFk",
-      "name": "trees for the woods",
-      "artist": "Amie Blu"
+      "id": "4edmBZ5KvOETrP0OsAw8nS",
+      "uri": "spotify:track:4edmBZ5KvOETrP0OsAw8nS",
+      "name": "I Believe In You",
+      "artist": "Heathers"
     },
     {
       "id": "1QA6xgUEZ1BqOj2xuroM3N",
@@ -26,10 +26,16 @@
       "artist": "Phoebe Bridgers"
     },
     {
-      "id": "4edmBZ5KvOETrP0OsAw8nS",
-      "uri": "spotify:track:4edmBZ5KvOETrP0OsAw8nS",
-      "name": "I Believe In You",
-      "artist": "Heathers"
+      "id": "4FXQTLl5v1jlaLvrp16mFk",
+      "uri": "spotify:track:4FXQTLl5v1jlaLvrp16mFk",
+      "name": "trees for the woods",
+      "artist": "Amie Blu"
+    },
+    {
+      "id": "6zV8IpLvw0tkRSVCFQJB1y",
+      "uri": "spotify:track:6zV8IpLvw0tkRSVCFQJB1y",
+      "name": "You've Got a Friend - 2019 Remaster",
+      "artist": "James Taylor"
     },
     {
       "id": "0vS87q256EOA3p80doMehD",
@@ -42,12 +48,6 @@
       "uri": "spotify:track:0bGImSqDB2ebdeoCidUC8o",
       "name": "BLACKOUT",
       "artist": "Turnstile"
-    },
-    {
-      "id": "1eqUenDSQsy87cpoogbKvi",
-      "uri": "spotify:track:1eqUenDSQsy87cpoogbKvi",
-      "name": "Não Identificado",
-      "artist": "Gal Costa"
     },
     {
       "id": "2eDvflMCe9ssOkUJrxqikB",
