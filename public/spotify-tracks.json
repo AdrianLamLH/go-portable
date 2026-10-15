@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-14T13:18:45.508Z",
+  "updatedAt": "2026-10-15T13:04:17.390Z",
   "topTracks": [
     {
       "id": "5I2pryLKw0kmA41kEBBhFP",
@@ -50,16 +50,16 @@
       "artist": "Turnstile"
     },
     {
-      "id": "2eDvflMCe9ssOkUJrxqikB",
-      "uri": "spotify:track:2eDvflMCe9ssOkUJrxqikB",
-      "name": "Thé à la menthe",
-      "artist": "La Caution"
-    },
-    {
       "id": "2hAQCoAswuQ643VhIuRC2p",
       "uri": "spotify:track:2hAQCoAswuQ643VhIuRC2p",
       "name": "The Governor’s Waltz",
       "artist": "Phoebe Bridgers"
+    },
+    {
+      "id": "3rzwGm27A4GmgYKFUPJijZ",
+      "uri": "spotify:track:3rzwGm27A4GmgYKFUPJijZ",
+      "name": "Anybody's fool",
+      "artist": "Lizzy McAlpine"
     }
   ]
 }
