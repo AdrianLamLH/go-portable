@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-15T13:04:17.390Z",
+  "updatedAt": "2026-10-17T11:58:22.226Z",
   "topTracks": [
     {
       "id": "5I2pryLKw0kmA41kEBBhFP",
@@ -38,16 +38,16 @@
       "artist": "James Taylor"
     },
     {
-      "id": "0vS87q256EOA3p80doMehD",
-      "uri": "spotify:track:0vS87q256EOA3p80doMehD",
-      "name": "gaga",
-      "artist": "Peterparker69, Jeter, Y ohtrixpointnever"
-    },
-    {
       "id": "0bGImSqDB2ebdeoCidUC8o",
       "uri": "spotify:track:0bGImSqDB2ebdeoCidUC8o",
       "name": "BLACKOUT",
       "artist": "Turnstile"
+    },
+    {
+      "id": "0vS87q256EOA3p80doMehD",
+      "uri": "spotify:track:0vS87q256EOA3p80doMehD",
+      "name": "gaga",
+      "artist": "Peterparker69, Jeter, Y ohtrixpointnever"
     },
     {
       "id": "2hAQCoAswuQ643VhIuRC2p",
@@ -56,10 +56,10 @@
       "artist": "Phoebe Bridgers"
     },
     {
-      "id": "3rzwGm27A4GmgYKFUPJijZ",
-      "uri": "spotify:track:3rzwGm27A4GmgYKFUPJijZ",
-      "name": "Anybody's fool",
-      "artist": "Lizzy McAlpine"
+      "id": "1XzQ57ONjIpRYB878VuGnF",
+      "uri": "spotify:track:1XzQ57ONjIpRYB878VuGnF",
+      "name": "Tongue",
+      "artist": "Fontaines D.C."
     }
   ]
 }
