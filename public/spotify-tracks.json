@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-17T11:58:22.226Z",
+  "updatedAt": "2026-10-18T12:26:48.734Z",
   "topTracks": [
     {
       "id": "5I2pryLKw0kmA41kEBBhFP",
@@ -38,6 +38,12 @@
       "artist": "James Taylor"
     },
     {
+      "id": "1XzQ57ONjIpRYB878VuGnF",
+      "uri": "spotify:track:1XzQ57ONjIpRYB878VuGnF",
+      "name": "Tongue",
+      "artist": "Fontaines D.C."
+    },
+    {
       "id": "0bGImSqDB2ebdeoCidUC8o",
       "uri": "spotify:track:0bGImSqDB2ebdeoCidUC8o",
       "name": "BLACKOUT",
@@ -54,12 +60,6 @@
       "uri": "spotify:track:2hAQCoAswuQ643VhIuRC2p",
       "name": "The Governor’s Waltz",
       "artist": "Phoebe Bridgers"
-    },
-    {
-      "id": "1XzQ57ONjIpRYB878VuGnF",
-      "uri": "spotify:track:1XzQ57ONjIpRYB878VuGnF",
-      "name": "Tongue",
-      "artist": "Fontaines D.C."
     }
   ]
 }
