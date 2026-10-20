@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-19T15:17:01.536Z",
+  "updatedAt": "2026-10-20T13:20:36.173Z",
   "topTracks": [
     {
       "id": "5I2pryLKw0kmA41kEBBhFP",
@@ -20,18 +20,6 @@
       "artist": "Phoebe Bridgers"
     },
     {
-      "id": "09IT8imSuZBu1mjhNWHjuo",
-      "uri": "spotify:track:09IT8imSuZBu1mjhNWHjuo",
-      "name": "Still Standing",
-      "artist": "Phoebe Bridgers"
-    },
-    {
-      "id": "4FXQTLl5v1jlaLvrp16mFk",
-      "uri": "spotify:track:4FXQTLl5v1jlaLvrp16mFk",
-      "name": "trees for the woods",
-      "artist": "Amie Blu"
-    },
-    {
       "id": "6zV8IpLvw0tkRSVCFQJB1y",
       "uri": "spotify:track:6zV8IpLvw0tkRSVCFQJB1y",
       "name": "You've Got a Friend - 2019 Remaster",
@@ -42,6 +30,12 @@
       "uri": "spotify:track:1tRUDLDDssC0OWOYjoOlId",
       "name": "Tongue",
       "artist": "Fontaines D.C."
+    },
+    {
+      "id": "09IT8imSuZBu1mjhNWHjuo",
+      "uri": "spotify:track:09IT8imSuZBu1mjhNWHjuo",
+      "name": "Still Standing",
+      "artist": "Phoebe Bridgers"
     },
     {
       "id": "0bGImSqDB2ebdeoCidUC8o",
@@ -56,10 +50,16 @@
       "artist": "Peterparker69, Jeter, Y ohtrixpointnever"
     },
     {
-      "id": "2hAQCoAswuQ643VhIuRC2p",
-      "uri": "spotify:track:2hAQCoAswuQ643VhIuRC2p",
-      "name": "The Governor’s Waltz",
-      "artist": "Phoebe Bridgers"
+      "id": "1sc5h43atBUn4pGfVjXqb7",
+      "uri": "spotify:track:1sc5h43atBUn4pGfVjXqb7",
+      "name": "Sweet Revenge",
+      "artist": "Ryuichi Sakamoto"
+    },
+    {
+      "id": "7ghKr0pCYyPPyp7t1FH8k4",
+      "uri": "spotify:track:7ghKr0pCYyPPyp7t1FH8k4",
+      "name": "Les",
+      "artist": "Childish Gambino"
     }
   ]
 }
