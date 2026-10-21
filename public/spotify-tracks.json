@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-20T13:20:36.173Z",
+  "updatedAt": "2026-10-21T13:26:22.118Z",
   "topTracks": [
     {
       "id": "5I2pryLKw0kmA41kEBBhFP",
@@ -32,12 +32,6 @@
       "artist": "Fontaines D.C."
     },
     {
-      "id": "09IT8imSuZBu1mjhNWHjuo",
-      "uri": "spotify:track:09IT8imSuZBu1mjhNWHjuo",
-      "name": "Still Standing",
-      "artist": "Phoebe Bridgers"
-    },
-    {
       "id": "0bGImSqDB2ebdeoCidUC8o",
       "uri": "spotify:track:0bGImSqDB2ebdeoCidUC8o",
       "name": "BLACKOUT",
@@ -48,6 +42,12 @@
       "uri": "spotify:track:0vS87q256EOA3p80doMehD",
       "name": "gaga",
       "artist": "Peterparker69, Jeter, Y ohtrixpointnever"
+    },
+    {
+      "id": "09IT8imSuZBu1mjhNWHjuo",
+      "uri": "spotify:track:09IT8imSuZBu1mjhNWHjuo",
+      "name": "Still Standing",
+      "artist": "Phoebe Bridgers"
     },
     {
       "id": "1sc5h43atBUn4pGfVjXqb7",
