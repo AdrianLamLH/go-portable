@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-21T13:26:22.118Z",
+  "updatedAt": "2026-10-22T13:27:41.796Z",
   "topTracks": [
     {
       "id": "5I2pryLKw0kmA41kEBBhFP",
@@ -44,12 +44,6 @@
       "artist": "Peterparker69, Jeter, Y ohtrixpointnever"
     },
     {
-      "id": "09IT8imSuZBu1mjhNWHjuo",
-      "uri": "spotify:track:09IT8imSuZBu1mjhNWHjuo",
-      "name": "Still Standing",
-      "artist": "Phoebe Bridgers"
-    },
-    {
       "id": "1sc5h43atBUn4pGfVjXqb7",
       "uri": "spotify:track:1sc5h43atBUn4pGfVjXqb7",
       "name": "Sweet Revenge",
@@ -60,6 +54,12 @@
       "uri": "spotify:track:7ghKr0pCYyPPyp7t1FH8k4",
       "name": "Les",
       "artist": "Childish Gambino"
+    },
+    {
+      "id": "09VMgxIhiWqEyI9JQQIr55",
+      "uri": "spotify:track:09VMgxIhiWqEyI9JQQIr55",
+      "name": "Melatonin",
+      "artist": "Tinashe"
     }
   ]
 }
