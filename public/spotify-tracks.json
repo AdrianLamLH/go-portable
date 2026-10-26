@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-25T12:57:25.795Z",
+  "updatedAt": "2026-10-26T14:51:10.356Z",
   "topTracks": [
     {
       "id": "5I2pryLKw0kmA41kEBBhFP",
@@ -14,12 +14,6 @@
       "artist": "Heathers"
     },
     {
-      "id": "1QA6xgUEZ1BqOj2xuroM3N",
-      "uri": "spotify:track:1QA6xgUEZ1BqOj2xuroM3N",
-      "name": "On Video",
-      "artist": "Phoebe Bridgers"
-    },
-    {
       "id": "6zV8IpLvw0tkRSVCFQJB1y",
       "uri": "spotify:track:6zV8IpLvw0tkRSVCFQJB1y",
       "name": "You've Got a Friend - 2019 Remaster",
@@ -32,34 +26,40 @@
       "artist": "Fontaines D.C."
     },
     {
-      "id": "0bGImSqDB2ebdeoCidUC8o",
-      "uri": "spotify:track:0bGImSqDB2ebdeoCidUC8o",
-      "name": "BLACKOUT",
-      "artist": "Turnstile"
-    },
-    {
       "id": "1sc5h43atBUn4pGfVjXqb7",
       "uri": "spotify:track:1sc5h43atBUn4pGfVjXqb7",
       "name": "Sweet Revenge",
       "artist": "Ryuichi Sakamoto"
     },
     {
-      "id": "5hz81g2KPtf9Cb2bJ8wwdR",
-      "uri": "spotify:track:5hz81g2KPtf9Cb2bJ8wwdR",
-      "name": "Wet Lips",
-      "artist": "Xanadu"
+      "id": "1QA6xgUEZ1BqOj2xuroM3N",
+      "uri": "spotify:track:1QA6xgUEZ1BqOj2xuroM3N",
+      "name": "On Video",
+      "artist": "Phoebe Bridgers"
     },
     {
-      "id": "0vS87q256EOA3p80doMehD",
-      "uri": "spotify:track:0vS87q256EOA3p80doMehD",
-      "name": "gaga",
-      "artist": "Peterparker69, Jeter, Y ohtrixpointnever"
+      "id": "6JrVv7wrlIV1xCRelpseLo",
+      "uri": "spotify:track:6JrVv7wrlIV1xCRelpseLo",
+      "name": "End Is In Sight",
+      "artist": "Zuli Jr."
     },
     {
-      "id": "09VMgxIhiWqEyI9JQQIr55",
-      "uri": "spotify:track:09VMgxIhiWqEyI9JQQIr55",
-      "name": "Melatonin",
-      "artist": "Tinashe"
+      "id": "0bGImSqDB2ebdeoCidUC8o",
+      "uri": "spotify:track:0bGImSqDB2ebdeoCidUC8o",
+      "name": "BLACKOUT",
+      "artist": "Turnstile"
+    },
+    {
+      "id": "6OciU5g0hekPBP9MqbCKFs",
+      "uri": "spotify:track:6OciU5g0hekPBP9MqbCKFs",
+      "name": "Marianne",
+      "artist": "Fontaines D.C."
+    },
+    {
+      "id": "71vuS1nprefkBeCK344TEL",
+      "uri": "spotify:track:71vuS1nprefkBeCK344TEL",
+      "name": "Airborne Aquarium",
+      "artist": "Curren$y"
     }
   ]
 }
