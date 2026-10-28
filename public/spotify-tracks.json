@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-27T13:58:15.288Z",
+  "updatedAt": "2026-10-28T14:51:19.740Z",
   "topTracks": [
     {
       "id": "4edmBZ5KvOETrP0OsAw8nS",
@@ -32,16 +32,16 @@
       "artist": "Ryuichi Sakamoto"
     },
     {
-      "id": "1QA6xgUEZ1BqOj2xuroM3N",
-      "uri": "spotify:track:1QA6xgUEZ1BqOj2xuroM3N",
-      "name": "On Video",
-      "artist": "Phoebe Bridgers"
-    },
-    {
       "id": "6JrVv7wrlIV1xCRelpseLo",
       "uri": "spotify:track:6JrVv7wrlIV1xCRelpseLo",
       "name": "End Is In Sight",
       "artist": "Zuli Jr."
+    },
+    {
+      "id": "1QA6xgUEZ1BqOj2xuroM3N",
+      "uri": "spotify:track:1QA6xgUEZ1BqOj2xuroM3N",
+      "name": "On Video",
+      "artist": "Phoebe Bridgers"
     },
     {
       "id": "0bGImSqDB2ebdeoCidUC8o",
