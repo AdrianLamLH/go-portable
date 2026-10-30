@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-29T14:56:45.964Z",
+  "updatedAt": "2026-10-30T14:49:40.353Z",
   "topTracks": [
     {
       "id": "4edmBZ5KvOETrP0OsAw8nS",
@@ -8,22 +8,16 @@
       "artist": "Heathers"
     },
     {
-      "id": "6zV8IpLvw0tkRSVCFQJB1y",
-      "uri": "spotify:track:6zV8IpLvw0tkRSVCFQJB1y",
-      "name": "You've Got a Friend - 2019 Remaster",
-      "artist": "James Taylor"
-    },
-    {
       "id": "1tRUDLDDssC0OWOYjoOlId",
       "uri": "spotify:track:1tRUDLDDssC0OWOYjoOlId",
       "name": "Tongue",
       "artist": "Fontaines D.C."
     },
     {
-      "id": "1sc5h43atBUn4pGfVjXqb7",
-      "uri": "spotify:track:1sc5h43atBUn4pGfVjXqb7",
-      "name": "Sweet Revenge",
-      "artist": "Ryuichi Sakamoto"
+      "id": "6zV8IpLvw0tkRSVCFQJB1y",
+      "uri": "spotify:track:6zV8IpLvw0tkRSVCFQJB1y",
+      "name": "You've Got a Friend - 2019 Remaster",
+      "artist": "James Taylor"
     },
     {
       "id": "6JrVv7wrlIV1xCRelpseLo",
@@ -32,10 +26,16 @@
       "artist": "Zuli Jr."
     },
     {
-      "id": "1QA6xgUEZ1BqOj2xuroM3N",
-      "uri": "spotify:track:1QA6xgUEZ1BqOj2xuroM3N",
-      "name": "On Video",
-      "artist": "Phoebe Bridgers"
+      "id": "1sc5h43atBUn4pGfVjXqb7",
+      "uri": "spotify:track:1sc5h43atBUn4pGfVjXqb7",
+      "name": "Sweet Revenge",
+      "artist": "Ryuichi Sakamoto"
+    },
+    {
+      "id": "71vuS1nprefkBeCK344TEL",
+      "uri": "spotify:track:71vuS1nprefkBeCK344TEL",
+      "name": "Airborne Aquarium",
+      "artist": "Curren$y"
     },
     {
       "id": "0bGImSqDB2ebdeoCidUC8o",
@@ -50,10 +50,10 @@
       "artist": "Fontaines D.C."
     },
     {
-      "id": "71vuS1nprefkBeCK344TEL",
-      "uri": "spotify:track:71vuS1nprefkBeCK344TEL",
-      "name": "Airborne Aquarium",
-      "artist": "Curren$y"
+      "id": "1WsRuvitfegWXQJKRgRZrj",
+      "uri": "spotify:track:1WsRuvitfegWXQJKRgRZrj",
+      "name": "Coming Back (feat. Mac Miller)",
+      "artist": "Domo Genesis, Mac Miller"
     },
     {
       "id": "5hz81g2KPtf9Cb2bJ8wwdR",
