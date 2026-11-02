@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-01T14:44:40.286Z",
+  "updatedAt": "2026-11-02T17:48:41.214Z",
   "topTracks": [
     {
       "id": "1PtSw6zn89rXkZoMCcvgA4",
@@ -38,12 +38,6 @@
       "artist": "Curren$y"
     },
     {
-      "id": "0bGImSqDB2ebdeoCidUC8o",
-      "uri": "spotify:track:0bGImSqDB2ebdeoCidUC8o",
-      "name": "BLACKOUT",
-      "artist": "Turnstile"
-    },
-    {
       "id": "6OciU5g0hekPBP9MqbCKFs",
       "uri": "spotify:track:6OciU5g0hekPBP9MqbCKFs",
       "name": "Marianne",
@@ -60,6 +54,12 @@
       "uri": "spotify:track:5hz81g2KPtf9Cb2bJ8wwdR",
       "name": "Wet Lips",
       "artist": "Xanadu"
+    },
+    {
+      "id": "0gZXockVcE7rEhSf4mcGLO",
+      "uri": "spotify:track:0gZXockVcE7rEhSf4mcGLO",
+      "name": "Guitar Man",
+      "artist": "Bread"
     }
   ]
 }
