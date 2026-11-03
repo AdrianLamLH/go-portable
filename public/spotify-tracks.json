@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-02T17:48:41.214Z",
+  "updatedAt": "2026-11-03T15:49:09.951Z",
   "topTracks": [
     {
       "id": "1PtSw6zn89rXkZoMCcvgA4",
@@ -12,12 +12,6 @@
       "uri": "spotify:track:1tRUDLDDssC0OWOYjoOlId",
       "name": "Tongue",
       "artist": "Fontaines D.C."
-    },
-    {
-      "id": "6zV8IpLvw0tkRSVCFQJB1y",
-      "uri": "spotify:track:6zV8IpLvw0tkRSVCFQJB1y",
-      "name": "You've Got a Friend - 2019 Remaster",
-      "artist": "James Taylor"
     },
     {
       "id": "6JrVv7wrlIV1xCRelpseLo",
@@ -36,6 +30,12 @@
       "uri": "spotify:track:71vuS1nprefkBeCK344TEL",
       "name": "Airborne Aquarium",
       "artist": "Curren$y"
+    },
+    {
+      "id": "6zV8IpLvw0tkRSVCFQJB1y",
+      "uri": "spotify:track:6zV8IpLvw0tkRSVCFQJB1y",
+      "name": "You've Got a Friend - 2019 Remaster",
+      "artist": "James Taylor"
     },
     {
       "id": "6OciU5g0hekPBP9MqbCKFs",
