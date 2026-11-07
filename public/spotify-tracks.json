@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T15:57:22.219Z",
+  "updatedAt": "2026-11-07T14:40:23.509Z",
   "topTracks": [
     {
       "id": "1PtSw6zn89rXkZoMCcvgA4",
@@ -44,12 +44,6 @@
       "artist": "Domo Genesis, Mac Miller"
     },
     {
-      "id": "1FKFCvi0i46qEJLZSEBH8p",
-      "uri": "spotify:track:1FKFCvi0i46qEJLZSEBH8p",
-      "name": "I Get Money",
-      "artist": "50 Cent"
-    },
-    {
       "id": "5hz81g2KPtf9Cb2bJ8wwdR",
       "uri": "spotify:track:5hz81g2KPtf9Cb2bJ8wwdR",
       "name": "Wet Lips",
@@ -60,6 +54,12 @@
       "uri": "spotify:track:6zV8IpLvw0tkRSVCFQJB1y",
       "name": "You've Got a Friend - 2019 Remaster",
       "artist": "James Taylor"
+    },
+    {
+      "id": "0Z1hvbWG6GJNfra89uS5Gx",
+      "uri": "spotify:track:0Z1hvbWG6GJNfra89uS5Gx",
+      "name": "It goes like this",
+      "artist": "Quadeca"
     }
   ]
 }
