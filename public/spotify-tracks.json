@@ -1,12 +1,6 @@
 {
-  "updatedAt": "2026-11-07T14:40:23.509Z",
+  "updatedAt": "2026-11-10T16:05:54.556Z",
   "topTracks": [
-    {
-      "id": "1PtSw6zn89rXkZoMCcvgA4",
-      "uri": "spotify:track:1PtSw6zn89rXkZoMCcvgA4",
-      "name": "I Believe In You",
-      "artist": "Heathers"
-    },
     {
       "id": "1tRUDLDDssC0OWOYjoOlId",
       "uri": "spotify:track:1tRUDLDDssC0OWOYjoOlId",
@@ -18,12 +12,6 @@
       "uri": "spotify:track:6JrVv7wrlIV1xCRelpseLo",
       "name": "End Is In Sight",
       "artist": "Zuli Jr."
-    },
-    {
-      "id": "1sc5h43atBUn4pGfVjXqb7",
-      "uri": "spotify:track:1sc5h43atBUn4pGfVjXqb7",
-      "name": "Sweet Revenge",
-      "artist": "Ryuichi Sakamoto"
     },
     {
       "id": "71vuS1nprefkBeCK344TEL",
@@ -38,10 +26,22 @@
       "artist": "Fontaines D.C."
     },
     {
+      "id": "1PtSw6zn89rXkZoMCcvgA4",
+      "uri": "spotify:track:1PtSw6zn89rXkZoMCcvgA4",
+      "name": "I Believe In You",
+      "artist": "Heathers"
+    },
+    {
       "id": "1WsRuvitfegWXQJKRgRZrj",
       "uri": "spotify:track:1WsRuvitfegWXQJKRgRZrj",
       "name": "Coming Back (feat. Mac Miller)",
       "artist": "Domo Genesis, Mac Miller"
+    },
+    {
+      "id": "1sc5h43atBUn4pGfVjXqb7",
+      "uri": "spotify:track:1sc5h43atBUn4pGfVjXqb7",
+      "name": "Sweet Revenge",
+      "artist": "Ryuichi Sakamoto"
     },
     {
       "id": "5hz81g2KPtf9Cb2bJ8wwdR",
