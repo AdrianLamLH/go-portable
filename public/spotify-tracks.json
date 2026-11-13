@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-12T16:34:34.743Z",
+  "updatedAt": "2026-11-13T15:54:56.048Z",
   "topTracks": [
     {
       "id": "6JrVv7wrlIV1xCRelpseLo",
@@ -20,16 +20,22 @@
       "artist": "Alex Amen"
     },
     {
-      "id": "6OciU5g0hekPBP9MqbCKFs",
-      "uri": "spotify:track:6OciU5g0hekPBP9MqbCKFs",
-      "name": "Marianne",
-      "artist": "Fontaines D.C."
-    },
-    {
       "id": "5hz81g2KPtf9Cb2bJ8wwdR",
       "uri": "spotify:track:5hz81g2KPtf9Cb2bJ8wwdR",
       "name": "Wet Lips",
       "artist": "Xanadu"
+    },
+    {
+      "id": "7x8dCjCr0x6x2lXKujYD34",
+      "uri": "spotify:track:7x8dCjCr0x6x2lXKujYD34",
+      "name": "The Pretender",
+      "artist": "Foo Fighters"
+    },
+    {
+      "id": "6OciU5g0hekPBP9MqbCKFs",
+      "uri": "spotify:track:6OciU5g0hekPBP9MqbCKFs",
+      "name": "Marianne",
+      "artist": "Fontaines D.C."
     },
     {
       "id": "1FrXO0TFnw6g0ygHxhiZ3p",
@@ -54,12 +60,6 @@
       "uri": "spotify:track:0Z1hvbWG6GJNfra89uS5Gx",
       "name": "It goes like this",
       "artist": "Quadeca"
-    },
-    {
-      "id": "5pblfgML8U0LizKlhMxvhV",
-      "uri": "spotify:track:5pblfgML8U0LizKlhMxvhV",
-      "name": "No Cameras",
-      "artist": "Victoryland"
     }
   ]
 }
