@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-13T15:54:56.048Z",
+  "updatedAt": "2026-11-14T14:45:26.000Z",
   "topTracks": [
     {
       "id": "6JrVv7wrlIV1xCRelpseLo",
@@ -8,10 +8,10 @@
       "artist": "Zuli Jr."
     },
     {
-      "id": "1tRUDLDDssC0OWOYjoOlId",
-      "uri": "spotify:track:1tRUDLDDssC0OWOYjoOlId",
-      "name": "Tongue",
-      "artist": "Fontaines D.C."
+      "id": "0k66KVUV7hzKPsemb6Wmf5",
+      "uri": "spotify:track:0k66KVUV7hzKPsemb6Wmf5",
+      "name": "how to make your love (stay)",
+      "artist": "untitled (halo)"
     },
     {
       "id": "0xfm4gjGatVXEy2uuXda9W",
@@ -20,46 +20,46 @@
       "artist": "Alex Amen"
     },
     {
+      "id": "1tRUDLDDssC0OWOYjoOlId",
+      "uri": "spotify:track:1tRUDLDDssC0OWOYjoOlId",
+      "name": "Tongue",
+      "artist": "Fontaines D.C."
+    },
+    {
       "id": "5hz81g2KPtf9Cb2bJ8wwdR",
       "uri": "spotify:track:5hz81g2KPtf9Cb2bJ8wwdR",
       "name": "Wet Lips",
       "artist": "Xanadu"
     },
     {
-      "id": "7x8dCjCr0x6x2lXKujYD34",
-      "uri": "spotify:track:7x8dCjCr0x6x2lXKujYD34",
-      "name": "The Pretender",
-      "artist": "Foo Fighters"
-    },
-    {
-      "id": "6OciU5g0hekPBP9MqbCKFs",
-      "uri": "spotify:track:6OciU5g0hekPBP9MqbCKFs",
-      "name": "Marianne",
-      "artist": "Fontaines D.C."
-    },
-    {
-      "id": "1FrXO0TFnw6g0ygHxhiZ3p",
-      "uri": "spotify:track:1FrXO0TFnw6g0ygHxhiZ3p",
-      "name": "La Mesa Del Rincón",
-      "artist": "Los Tigres Del Norte"
-    },
-    {
-      "id": "2w369qvVEEDiXdVrA4dnF0",
-      "uri": "spotify:track:2w369qvVEEDiXdVrA4dnF0",
-      "name": "What if I miss you for the rest of my life? - Live in the Studio",
-      "artist": "Janine Berdin"
-    },
-    {
-      "id": "53E0Quqma92sE3YWUinnj4",
-      "uri": "spotify:track:53E0Quqma92sE3YWUinnj4",
-      "name": "Adeline",
-      "artist": "Joshua Slone"
-    },
-    {
       "id": "0Z1hvbWG6GJNfra89uS5Gx",
       "uri": "spotify:track:0Z1hvbWG6GJNfra89uS5Gx",
       "name": "It goes like this",
       "artist": "Quadeca"
+    },
+    {
+      "id": "2qUz7lMpIegCFos7LjxQWn",
+      "uri": "spotify:track:2qUz7lMpIegCFos7LjxQWn",
+      "name": "I Don't Mind",
+      "artist": "Jhené Aiko"
+    },
+    {
+      "id": "2jsqoaZJqHF1t25vVuONHn",
+      "uri": "spotify:track:2jsqoaZJqHF1t25vVuONHn",
+      "name": "Cross The Street",
+      "artist": "Junior Varsity"
+    },
+    {
+      "id": "3MshXF4YQRoFw82plcsUge",
+      "uri": "spotify:track:3MshXF4YQRoFw82plcsUge",
+      "name": "Steal Away",
+      "artist": "Robbie Dupree"
+    },
+    {
+      "id": "1WsRuvitfegWXQJKRgRZrj",
+      "uri": "spotify:track:1WsRuvitfegWXQJKRgRZrj",
+      "name": "Coming Back (feat. Mac Miller)",
+      "artist": "Domo Genesis, Mac Miller"
     }
   ]
 }
