@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-14T14:45:26.000Z",
+  "updatedAt": "2026-11-15T15:21:11.609Z",
   "topTracks": [
     {
       "id": "6JrVv7wrlIV1xCRelpseLo",
@@ -18,12 +18,6 @@
       "uri": "spotify:track:0xfm4gjGatVXEy2uuXda9W",
       "name": "Changes",
       "artist": "Alex Amen"
-    },
-    {
-      "id": "1tRUDLDDssC0OWOYjoOlId",
-      "uri": "spotify:track:1tRUDLDDssC0OWOYjoOlId",
-      "name": "Tongue",
-      "artist": "Fontaines D.C."
     },
     {
       "id": "5hz81g2KPtf9Cb2bJ8wwdR",
@@ -48,6 +42,12 @@
       "uri": "spotify:track:2jsqoaZJqHF1t25vVuONHn",
       "name": "Cross The Street",
       "artist": "Junior Varsity"
+    },
+    {
+      "id": "1tRUDLDDssC0OWOYjoOlId",
+      "uri": "spotify:track:1tRUDLDDssC0OWOYjoOlId",
+      "name": "Tongue",
+      "artist": "Fontaines D.C."
     },
     {
       "id": "3MshXF4YQRoFw82plcsUge",
