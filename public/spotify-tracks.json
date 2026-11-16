@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-15T15:21:11.609Z",
+  "updatedAt": "2026-11-16T17:56:52.214Z",
   "topTracks": [
     {
       "id": "6JrVv7wrlIV1xCRelpseLo",
@@ -12,6 +12,12 @@
       "uri": "spotify:track:0k66KVUV7hzKPsemb6Wmf5",
       "name": "how to make your love (stay)",
       "artist": "untitled (halo)"
+    },
+    {
+      "id": "7x8dCjCr0x6x2lXKujYD34",
+      "uri": "spotify:track:7x8dCjCr0x6x2lXKujYD34",
+      "name": "The Pretender",
+      "artist": "Foo Fighters"
     },
     {
       "id": "0xfm4gjGatVXEy2uuXda9W",
@@ -54,12 +60,6 @@
       "uri": "spotify:track:3MshXF4YQRoFw82plcsUge",
       "name": "Steal Away",
       "artist": "Robbie Dupree"
-    },
-    {
-      "id": "1WsRuvitfegWXQJKRgRZrj",
-      "uri": "spotify:track:1WsRuvitfegWXQJKRgRZrj",
-      "name": "Coming Back (feat. Mac Miller)",
-      "artist": "Domo Genesis, Mac Miller"
     }
   ]
 }
