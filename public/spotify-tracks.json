@@ -1,17 +1,17 @@
 {
-  "updatedAt": "2026-11-16T17:56:52.214Z",
+  "updatedAt": "2026-11-18T16:56:45.659Z",
   "topTracks": [
-    {
-      "id": "6JrVv7wrlIV1xCRelpseLo",
-      "uri": "spotify:track:6JrVv7wrlIV1xCRelpseLo",
-      "name": "End Is In Sight",
-      "artist": "Zuli Jr."
-    },
     {
       "id": "0k66KVUV7hzKPsemb6Wmf5",
       "uri": "spotify:track:0k66KVUV7hzKPsemb6Wmf5",
       "name": "how to make your love (stay)",
       "artist": "untitled (halo)"
+    },
+    {
+      "id": "6JrVv7wrlIV1xCRelpseLo",
+      "uri": "spotify:track:6JrVv7wrlIV1xCRelpseLo",
+      "name": "End Is In Sight",
+      "artist": "Zuli Jr."
     },
     {
       "id": "7x8dCjCr0x6x2lXKujYD34",
@@ -56,10 +56,10 @@
       "artist": "Fontaines D.C."
     },
     {
-      "id": "3MshXF4YQRoFw82plcsUge",
-      "uri": "spotify:track:3MshXF4YQRoFw82plcsUge",
-      "name": "Steal Away",
-      "artist": "Robbie Dupree"
+      "id": "1WsRuvitfegWXQJKRgRZrj",
+      "uri": "spotify:track:1WsRuvitfegWXQJKRgRZrj",
+      "name": "Coming Back (feat. Mac Miller)",
+      "artist": "Domo Genesis, Mac Miller"
     }
   ]
 }
