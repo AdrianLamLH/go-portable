@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-18T16:56:45.659Z",
+  "updatedAt": "2026-11-20T16:42:13.924Z",
   "topTracks": [
     {
       "id": "0k66KVUV7hzKPsemb6Wmf5",
@@ -26,12 +26,6 @@
       "artist": "Alex Amen"
     },
     {
-      "id": "5hz81g2KPtf9Cb2bJ8wwdR",
-      "uri": "spotify:track:5hz81g2KPtf9Cb2bJ8wwdR",
-      "name": "Wet Lips",
-      "artist": "Xanadu"
-    },
-    {
       "id": "0Z1hvbWG6GJNfra89uS5Gx",
       "uri": "spotify:track:0Z1hvbWG6GJNfra89uS5Gx",
       "name": "It goes like this",
@@ -44,12 +38,6 @@
       "artist": "Jhené Aiko"
     },
     {
-      "id": "2jsqoaZJqHF1t25vVuONHn",
-      "uri": "spotify:track:2jsqoaZJqHF1t25vVuONHn",
-      "name": "Cross The Street",
-      "artist": "Junior Varsity"
-    },
-    {
       "id": "1tRUDLDDssC0OWOYjoOlId",
       "uri": "spotify:track:1tRUDLDDssC0OWOYjoOlId",
       "name": "Tongue",
@@ -60,6 +48,18 @@
       "uri": "spotify:track:1WsRuvitfegWXQJKRgRZrj",
       "name": "Coming Back (feat. Mac Miller)",
       "artist": "Domo Genesis, Mac Miller"
+    },
+    {
+      "id": "2jsqoaZJqHF1t25vVuONHn",
+      "uri": "spotify:track:2jsqoaZJqHF1t25vVuONHn",
+      "name": "Cross The Street",
+      "artist": "Junior Varsity"
+    },
+    {
+      "id": "3MshXF4YQRoFw82plcsUge",
+      "uri": "spotify:track:3MshXF4YQRoFw82plcsUge",
+      "name": "Steal Away",
+      "artist": "Robbie Dupree"
     }
   ]
 }
