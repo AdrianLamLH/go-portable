@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-20T16:42:13.924Z",
+  "updatedAt": "2026-11-22T15:55:30.886Z",
   "topTracks": [
     {
       "id": "0k66KVUV7hzKPsemb6Wmf5",
@@ -26,12 +26,6 @@
       "artist": "Alex Amen"
     },
     {
-      "id": "0Z1hvbWG6GJNfra89uS5Gx",
-      "uri": "spotify:track:0Z1hvbWG6GJNfra89uS5Gx",
-      "name": "It goes like this",
-      "artist": "Quadeca"
-    },
-    {
       "id": "2qUz7lMpIegCFos7LjxQWn",
       "uri": "spotify:track:2qUz7lMpIegCFos7LjxQWn",
       "name": "I Don't Mind",
@@ -44,22 +38,28 @@
       "artist": "Fontaines D.C."
     },
     {
-      "id": "1WsRuvitfegWXQJKRgRZrj",
-      "uri": "spotify:track:1WsRuvitfegWXQJKRgRZrj",
-      "name": "Coming Back (feat. Mac Miller)",
-      "artist": "Domo Genesis, Mac Miller"
-    },
-    {
       "id": "2jsqoaZJqHF1t25vVuONHn",
       "uri": "spotify:track:2jsqoaZJqHF1t25vVuONHn",
       "name": "Cross The Street",
       "artist": "Junior Varsity"
     },
     {
-      "id": "3MshXF4YQRoFw82plcsUge",
-      "uri": "spotify:track:3MshXF4YQRoFw82plcsUge",
-      "name": "Steal Away",
-      "artist": "Robbie Dupree"
+      "id": "1WsRuvitfegWXQJKRgRZrj",
+      "uri": "spotify:track:1WsRuvitfegWXQJKRgRZrj",
+      "name": "Coming Back (feat. Mac Miller)",
+      "artist": "Domo Genesis, Mac Miller"
+    },
+    {
+      "id": "2w369qvVEEDiXdVrA4dnF0",
+      "uri": "spotify:track:2w369qvVEEDiXdVrA4dnF0",
+      "name": "What if I miss you for the rest of my life? - Live in the Studio",
+      "artist": "Janine Berdin"
+    },
+    {
+      "id": "49iToV0KDM1OyZdtkFaQrZ",
+      "uri": "spotify:track:49iToV0KDM1OyZdtkFaQrZ",
+      "name": "Guitar Man",
+      "artist": "Bread"
     }
   ]
 }
