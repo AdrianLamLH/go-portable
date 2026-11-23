@@ -1,17 +1,11 @@
 {
-  "updatedAt": "2026-11-22T15:55:30.886Z",
+  "updatedAt": "2026-11-23T19:50:50.562Z",
   "topTracks": [
     {
       "id": "0k66KVUV7hzKPsemb6Wmf5",
       "uri": "spotify:track:0k66KVUV7hzKPsemb6Wmf5",
       "name": "how to make your love (stay)",
       "artist": "untitled (halo)"
-    },
-    {
-      "id": "6JrVv7wrlIV1xCRelpseLo",
-      "uri": "spotify:track:6JrVv7wrlIV1xCRelpseLo",
-      "name": "End Is In Sight",
-      "artist": "Zuli Jr."
     },
     {
       "id": "7x8dCjCr0x6x2lXKujYD34",
@@ -32,12 +26,6 @@
       "artist": "Jhené Aiko"
     },
     {
-      "id": "1tRUDLDDssC0OWOYjoOlId",
-      "uri": "spotify:track:1tRUDLDDssC0OWOYjoOlId",
-      "name": "Tongue",
-      "artist": "Fontaines D.C."
-    },
-    {
       "id": "2jsqoaZJqHF1t25vVuONHn",
       "uri": "spotify:track:2jsqoaZJqHF1t25vVuONHn",
       "name": "Cross The Street",
@@ -56,10 +44,22 @@
       "artist": "Janine Berdin"
     },
     {
-      "id": "49iToV0KDM1OyZdtkFaQrZ",
-      "uri": "spotify:track:49iToV0KDM1OyZdtkFaQrZ",
-      "name": "Guitar Man",
-      "artist": "Bread"
+      "id": "53E0Quqma92sE3YWUinnj4",
+      "uri": "spotify:track:53E0Quqma92sE3YWUinnj4",
+      "name": "Adeline",
+      "artist": "Joshua Slone"
+    },
+    {
+      "id": "6eZdZWIjhIGU7OR0FhmvqJ",
+      "uri": "spotify:track:6eZdZWIjhIGU7OR0FhmvqJ",
+      "name": "No Punctuation",
+      "artist": "beabadoobee"
+    },
+    {
+      "id": "7GFX7HY2RXoLlymkdbleRF",
+      "uri": "spotify:track:7GFX7HY2RXoLlymkdbleRF",
+      "name": "Leave Me There",
+      "artist": "Liang Lawrence"
     }
   ]
 }
