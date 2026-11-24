@@ -1,17 +1,11 @@
 {
-  "updatedAt": "2026-11-23T19:50:50.562Z",
+  "updatedAt": "2026-11-24T19:20:02.135Z",
   "topTracks": [
     {
       "id": "0k66KVUV7hzKPsemb6Wmf5",
       "uri": "spotify:track:0k66KVUV7hzKPsemb6Wmf5",
       "name": "how to make your love (stay)",
       "artist": "untitled (halo)"
-    },
-    {
-      "id": "7x8dCjCr0x6x2lXKujYD34",
-      "uri": "spotify:track:7x8dCjCr0x6x2lXKujYD34",
-      "name": "The Pretender",
-      "artist": "Foo Fighters"
     },
     {
       "id": "0xfm4gjGatVXEy2uuXda9W",
@@ -26,40 +20,46 @@
       "artist": "Jhené Aiko"
     },
     {
-      "id": "2jsqoaZJqHF1t25vVuONHn",
-      "uri": "spotify:track:2jsqoaZJqHF1t25vVuONHn",
-      "name": "Cross The Street",
-      "artist": "Junior Varsity"
-    },
-    {
       "id": "1WsRuvitfegWXQJKRgRZrj",
       "uri": "spotify:track:1WsRuvitfegWXQJKRgRZrj",
       "name": "Coming Back (feat. Mac Miller)",
       "artist": "Domo Genesis, Mac Miller"
     },
     {
-      "id": "2w369qvVEEDiXdVrA4dnF0",
-      "uri": "spotify:track:2w369qvVEEDiXdVrA4dnF0",
-      "name": "What if I miss you for the rest of my life? - Live in the Studio",
-      "artist": "Janine Berdin"
+      "id": "1tRUDLDDssC0OWOYjoOlId",
+      "uri": "spotify:track:1tRUDLDDssC0OWOYjoOlId",
+      "name": "Tongue",
+      "artist": "Fontaines D.C."
     },
     {
-      "id": "53E0Quqma92sE3YWUinnj4",
-      "uri": "spotify:track:53E0Quqma92sE3YWUinnj4",
-      "name": "Adeline",
-      "artist": "Joshua Slone"
+      "id": "0Z1hvbWG6GJNfra89uS5Gx",
+      "uri": "spotify:track:0Z1hvbWG6GJNfra89uS5Gx",
+      "name": "It goes like this",
+      "artist": "Quadeca"
     },
     {
-      "id": "6eZdZWIjhIGU7OR0FhmvqJ",
-      "uri": "spotify:track:6eZdZWIjhIGU7OR0FhmvqJ",
-      "name": "No Punctuation",
-      "artist": "beabadoobee"
+      "id": "2jsqoaZJqHF1t25vVuONHn",
+      "uri": "spotify:track:2jsqoaZJqHF1t25vVuONHn",
+      "name": "Cross The Street",
+      "artist": "Junior Varsity"
     },
     {
-      "id": "7GFX7HY2RXoLlymkdbleRF",
-      "uri": "spotify:track:7GFX7HY2RXoLlymkdbleRF",
-      "name": "Leave Me There",
-      "artist": "Liang Lawrence"
+      "id": "3MshXF4YQRoFw82plcsUge",
+      "uri": "spotify:track:3MshXF4YQRoFw82plcsUge",
+      "name": "Steal Away",
+      "artist": "Robbie Dupree"
+    },
+    {
+      "id": "7x8dCjCr0x6x2lXKujYD34",
+      "uri": "spotify:track:7x8dCjCr0x6x2lXKujYD34",
+      "name": "The Pretender",
+      "artist": "Foo Fighters"
+    },
+    {
+      "id": "4kMLG7mrBKm2tbX7rDHnVJ",
+      "uri": "spotify:track:4kMLG7mrBKm2tbX7rDHnVJ",
+      "name": "Trucker's Atlas",
+      "artist": "Sun Kil Moon"
     }
   ]
 }
