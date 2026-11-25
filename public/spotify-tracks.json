@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-24T19:20:02.135Z",
+  "updatedAt": "2026-11-25T18:25:40.214Z",
   "topTracks": [
     {
       "id": "0k66KVUV7hzKPsemb6Wmf5",
@@ -20,6 +20,18 @@
       "artist": "Jhené Aiko"
     },
     {
+      "id": "2jsqoaZJqHF1t25vVuONHn",
+      "uri": "spotify:track:2jsqoaZJqHF1t25vVuONHn",
+      "name": "Cross The Street",
+      "artist": "Junior Varsity"
+    },
+    {
+      "id": "4kMLG7mrBKm2tbX7rDHnVJ",
+      "uri": "spotify:track:4kMLG7mrBKm2tbX7rDHnVJ",
+      "name": "Trucker's Atlas",
+      "artist": "Sun Kil Moon"
+    },
+    {
       "id": "1WsRuvitfegWXQJKRgRZrj",
       "uri": "spotify:track:1WsRuvitfegWXQJKRgRZrj",
       "name": "Coming Back (feat. Mac Miller)",
@@ -38,28 +50,16 @@
       "artist": "Quadeca"
     },
     {
-      "id": "2jsqoaZJqHF1t25vVuONHn",
-      "uri": "spotify:track:2jsqoaZJqHF1t25vVuONHn",
-      "name": "Cross The Street",
-      "artist": "Junior Varsity"
+      "id": "1rsGgTI1KMLc5hmbzDfd72",
+      "uri": "spotify:track:1rsGgTI1KMLc5hmbzDfd72",
+      "name": "How Can You Live If You Can’t Love How Can You If You Do",
+      "artist": "Wednesday"
     },
     {
       "id": "3MshXF4YQRoFw82plcsUge",
       "uri": "spotify:track:3MshXF4YQRoFw82plcsUge",
       "name": "Steal Away",
       "artist": "Robbie Dupree"
-    },
-    {
-      "id": "7x8dCjCr0x6x2lXKujYD34",
-      "uri": "spotify:track:7x8dCjCr0x6x2lXKujYD34",
-      "name": "The Pretender",
-      "artist": "Foo Fighters"
-    },
-    {
-      "id": "4kMLG7mrBKm2tbX7rDHnVJ",
-      "uri": "spotify:track:4kMLG7mrBKm2tbX7rDHnVJ",
-      "name": "Trucker's Atlas",
-      "artist": "Sun Kil Moon"
     }
   ]
 }
