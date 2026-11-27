@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-25T18:25:40.214Z",
+  "updatedAt": "2026-11-27T17:50:21.198Z",
   "topTracks": [
     {
       "id": "0k66KVUV7hzKPsemb6Wmf5",
@@ -20,16 +20,34 @@
       "artist": "Jhené Aiko"
     },
     {
+      "id": "4kMLG7mrBKm2tbX7rDHnVJ",
+      "uri": "spotify:track:4kMLG7mrBKm2tbX7rDHnVJ",
+      "name": "Trucker's Atlas",
+      "artist": "Sun Kil Moon"
+    },
+    {
       "id": "2jsqoaZJqHF1t25vVuONHn",
       "uri": "spotify:track:2jsqoaZJqHF1t25vVuONHn",
       "name": "Cross The Street",
       "artist": "Junior Varsity"
     },
     {
-      "id": "4kMLG7mrBKm2tbX7rDHnVJ",
-      "uri": "spotify:track:4kMLG7mrBKm2tbX7rDHnVJ",
-      "name": "Trucker's Atlas",
-      "artist": "Sun Kil Moon"
+      "id": "3MshXF4YQRoFw82plcsUge",
+      "uri": "spotify:track:3MshXF4YQRoFw82plcsUge",
+      "name": "Steal Away",
+      "artist": "Robbie Dupree"
+    },
+    {
+      "id": "7x8dCjCr0x6x2lXKujYD34",
+      "uri": "spotify:track:7x8dCjCr0x6x2lXKujYD34",
+      "name": "The Pretender",
+      "artist": "Foo Fighters"
+    },
+    {
+      "id": "1LEfQ06PTdD4F6SZ8fufKb",
+      "uri": "spotify:track:1LEfQ06PTdD4F6SZ8fufKb",
+      "name": "Car Ride",
+      "artist": "Yana"
     },
     {
       "id": "1WsRuvitfegWXQJKRgRZrj",
@@ -38,28 +56,10 @@
       "artist": "Domo Genesis, Mac Miller"
     },
     {
-      "id": "1tRUDLDDssC0OWOYjoOlId",
-      "uri": "spotify:track:1tRUDLDDssC0OWOYjoOlId",
-      "name": "Tongue",
-      "artist": "Fontaines D.C."
-    },
-    {
-      "id": "0Z1hvbWG6GJNfra89uS5Gx",
-      "uri": "spotify:track:0Z1hvbWG6GJNfra89uS5Gx",
-      "name": "It goes like this",
-      "artist": "Quadeca"
-    },
-    {
-      "id": "1rsGgTI1KMLc5hmbzDfd72",
-      "uri": "spotify:track:1rsGgTI1KMLc5hmbzDfd72",
-      "name": "How Can You Live If You Can’t Love How Can You If You Do",
-      "artist": "Wednesday"
-    },
-    {
-      "id": "3MshXF4YQRoFw82plcsUge",
-      "uri": "spotify:track:3MshXF4YQRoFw82plcsUge",
-      "name": "Steal Away",
-      "artist": "Robbie Dupree"
+      "id": "2w369qvVEEDiXdVrA4dnF0",
+      "uri": "spotify:track:2w369qvVEEDiXdVrA4dnF0",
+      "name": "What if I miss you for the rest of my life? - Live in the Studio",
+      "artist": "Janine Berdin"
     }
   ]
 }
